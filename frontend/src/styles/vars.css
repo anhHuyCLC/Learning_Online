@@ -1,0 +1,167 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap");
+
+:root {
+  /* Modern 2026 palette */
+  --bg-1: linear-gradient(180deg, #f6fbff 0%, #f3f7fb 100%);
+  --bg: #f6f9fc;
+  --surface: #ffffff;
+  --text: #0f1724;
+  --muted: #6b7280;
+  --primary: #0066ff;
+  --primary-600: #0053e6;
+  --accent: #8b5cf6;
+  --success: #16a34a;
+  --danger: #ef4444;
+
+  /* Radii & shadows */
+  --radius: 14px;
+  --radius-sm: 10px;
+  --pill-radius: 9999px;
+  --card-radius: 14px;
+  --shadow-1: 0 6px 30px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 2px 8px rgba(15, 23, 42, 0.06);
+
+  /* Spacing & sizing */
+  --container-max: 1200px;
+  --g-xx: 28px;
+  --g-x: 20px;
+  --g: 16px;
+  --g-sm: 10px;
+
+  /* Type scale */
+  --fs-xxl: 32px;
+  --fs-xl: 22px;
+  --fs-lg: 18px;
+  --fs-base: 16px;
+  --fs-sm: 14px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.9, 0.2, 1);
+  --trans-fast: 140ms;
+  --trans: 260ms;
+}
+
+/* Global base */
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout helpers */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--g-x);
+  box-sizing: border-box;
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--pill-radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition:
+    transform var(--trans-fast) var(--ease),
+    box-shadow var(--trans-fast) var(--ease),
+    opacity var(--trans-fast) var(--ease);
+}
+.btn-primary {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  color: var(--surface);
+  box-shadow: var(--shadow-2);
+}
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-1);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 8px 12px;
+}
+.btn-small {
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+/* Cards & utilities */
+.card {
+  background: var(--surface);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-2);
+  padding: 18px;
+}
+.muted {
+  color: var(--muted);
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+.grid-auto-fit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--g-x);
+}
+
+/* spacing */
+.mb-10 {
+  margin-bottom: 10px;
+}
+.ml-10 {
+  margin-left: 10px;
+}
+.mt-20 {
+  margin-top: 20px;
+}
+.text-error {
+  color: var(--danger);
+  margin-bottom: 10px;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --grid-cols: 2;
+  }
+}
