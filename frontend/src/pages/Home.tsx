@@ -123,7 +123,20 @@ export default function Home() {
               </>
             ) : (
               <>
-                <span className="user-greeting">Chào mừng, {user?.name}!</span>
+                <button
+                  className="btn-text"
+                  onClick={() => navigate("/profile")}
+                  title="Hồ sơ cá nhân"
+                >
+                  👤 {user?.name}
+                </button>
+                <button
+                  className="btn-text"
+                  onClick={() => navigate("/my-enrollments")}
+                  title="Các khóa học của tôi"
+                >
+                  📚 Khóa học
+                </button>
                 <button className="btn-text" onClick={handleLogout}>
                   Đăng Xuất
                 </button>

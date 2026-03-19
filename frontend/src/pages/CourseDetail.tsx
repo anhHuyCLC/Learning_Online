@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../app/store";
 import { getCourseById, clearError } from "../features/courseSlice";
+import { checkEnrollment, enrollInCourse, unenrollFromCourse } from "../features/enrollmentSlice";
 import { Loading } from "../components";
 import "../styles/courseDetail.css";
 
@@ -10,18 +11,64 @@ export default function CourseDetail() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { courses, loading, error } = useAppSelector((state) => state.courses);
-    const course = courses[0]; // getCourseById stores single course in array
+    const { isEnrolled, loading: enrollmentLoading } = useAppSelector((state) => state.enrollment);
+    const { user } = useAppSelector((state) => state.auth);
+    const course = courses[0];
+    const courseId = id ? parseInt(id, 10) : 0;
+    const isUserEnrolled = isEnrolled[courseId] || false;
+    const [enrollError, setEnrollError] = useState<string | null>(null);
     const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
 
     useEffect(() => {
         if (id) {
-            const courseId = parseInt(id, 10);
             dispatch(getCourseById(courseId));
         }
         return () => {
             dispatch(clearError());
         };
-    }, [id, dispatch]);
+    }, [id, dispatch, courseId]);
+
+    // Check enrollment status
+    useEffect(() => {
+        if (user && courseId) {
+            dispatch(checkEnrollment(courseId));
+        }
+    }, [user, courseId, dispatch]);
+
+    const handleEnroll = async () => {
+        if (!user) {
+            navigate("/login");
+            return;
+        }
+
+        setEnrollError(null);
+        try {
+            await dispatch(enrollInCourse(courseId));
+            // Re-check enrollment status after enroll
+            setTimeout(() => {
+                dispatch(checkEnrollment(courseId));
+            }, 300);
+        } catch (err: any) {
+            setEnrollError(err.message || "Lỗi khi đăng ký khóa học");
+        }
+    };
+
+    const handleUnenroll = async () => {
+        if (!window.confirm("Bạn chắc chắn muốn hủy đăng ký khóa học này?")) {
+            return;
+        }
+
+        setEnrollError(null);
+        try {
+            await dispatch(unenrollFromCourse(courseId));
+            // Re-check enrollment status after unenroll
+            setTimeout(() => {
+                dispatch(checkEnrollment(courseId));
+            }, 300);
+        } catch (err: any) {
+            setEnrollError(err.message || "Lỗi khi hủy đăng ký");
+        }
+    };
 
     if (loading) {
         return <Loading />;
@@ -61,19 +108,12 @@ export default function CourseDetail() {
                             : course.image?.startsWith("/uploads")
                             ? `${API_URL}${course.image}`
                             : `${API_URL}/uploads/courses/${course.image}`;
-                        console.log("Course image field:", course.image);
-                        console.log("Final image URL:", imageUrl);
                         return (
                             <img
                                 src={imageUrl}
                                 alt={course.title}
                                 onError={(e) => {
                                     const target = e.target as HTMLImageElement;
-                                    // console.error("Image load error:", {
-                                    //     failedUrl: target.src,
-                                    //     imageField: course.image,
-                                    //     apiUrl: API_URL
-                                    // });
                                     target.src = "https://via.placeholder.com/400x300?text=Course+Image";
                                 }}
                             />
@@ -83,7 +123,6 @@ export default function CourseDetail() {
 
                 <div className="course-detail-content">
                     <h1 className="course-detail-title">{course.title}</h1>
-                    <p className="course-detail-name">Course: {course.name}</p>
 
                     <div className="course-detail-meta">
                         <div className="meta-item">
@@ -103,7 +142,42 @@ export default function CourseDetail() {
                         <p>{course.detail_description || course.description}</p>
                     </div>
 
-                    <button className="course-detail-btn">Enroll Now</button>
+                    {enrollError && (
+                        <div className="enrollment-error">
+                            <p>{enrollError}</p>
+                        </div>
+                    )}
+
+                    <div className="course-actions">
+                        {isUserEnrolled ? (
+                            <>
+                                <button className="course-detail-btn enrolled-btn" disabled>
+                                    ✓ Đã Đăng Ký
+                                </button>
+                                <button
+                                    className="course-detail-btn unenroll-btn"
+                                    onClick={handleUnenroll}
+                                    disabled={enrollmentLoading}
+                                >
+                                    {enrollmentLoading ? "Đang xử lý..." : "Hủy Đăng Ký"}
+                                </button>
+                                <button
+                                    className="course-detail-btn my-courses-btn"
+                                    onClick={() => navigate("/my-enrollments")}
+                                >
+                                    Xem Khóa Học Của Tôi
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                className="course-detail-btn"
+                                onClick={handleEnroll}
+                                disabled={enrollmentLoading}
+                            >
+                                {enrollmentLoading ? "Đang xử lý..." : "Đăng Ký Ngay"}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

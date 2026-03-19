@@ -184,6 +184,11 @@
   color: var(--primary);
 }
 
+.btn-text:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .btn-premium {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;

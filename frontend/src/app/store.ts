@@ -6,11 +6,13 @@ import {
 } from "react-redux";
 import authReducer from "../features/authSlice";
 import courseReducer from "../features/courseSlice";
+import enrollmentReducer from "../features/enrollmentSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     courses: courseReducer,
+    enrollment: enrollmentReducer,
   },
 });
 

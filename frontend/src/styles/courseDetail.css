@@ -133,9 +133,60 @@
     margin: 0;
 }
 
+.enrollment-error {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-left: 4px solid #ef4444;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.enrollment-error p {
+    color: #dc2626;
+    margin: 0;
+    font-weight: 500;
+}
+
+.course-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.enrolled-btn {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+    cursor: default !important;
+}
+
+.enrolled-btn:hover {
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3) !important;
+}
+
+.unenroll-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.unenroll-btn:hover:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3) !important;
+}
+
+.my-courses-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+}
+
+.my-courses-btn:hover {
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3) !important;
+}
+
+.course-detail-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .course-detail-btn {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
+    color: black;
     border: none;
     padding: 15px 30px;
     font-size: 16px;
@@ -194,6 +245,10 @@
     background: var(--primary-dark);
     transform: translateY(-2px);
 }
+.course-detail-back:focus{
+        outline: none;
+        box-shadow: none;
+    }
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -223,7 +278,6 @@
         padding: 8px 16px;
         font-size: 14px;
     }
-
     .course-detail-error {
         margin: 50px 20px;
         padding: 30px;
