@@ -42,7 +42,7 @@ const UserProfile: React.FC = () => {
   return (
     <div className="user-profile-page">
       <Header title="Hồ Sơ Cá Nhân" subtitle="Quản lý thông tin và khóa học của bạn" />
-        
+
       <div className="profile-container">
         {/* User Info Section */}
         <div className="profile-section">
@@ -108,7 +108,14 @@ const UserProfile: React.FC = () => {
               </p>
               <button
                 className="btn-primary"
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  navigate("/")
+                  setTimeout(() => {
+                    document
+                      .getElementById("courses-section")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }, 100)
+                }}
               >
                 Xem các khóa học
               </button>
@@ -133,7 +140,7 @@ const UserProfile: React.FC = () => {
                   <div className="course-info">
                     <h4 className="course-title">{enrollment.course_name}</h4>
                     <p className="course-desc">{enrollment.course_description}</p>
-                    
+
                     <div className="course-meta">
                       <div className="meta-item">
                         <span className="meta-label">Giáo viên:</span>
@@ -167,7 +174,7 @@ const UserProfile: React.FC = () => {
 
                     <button
                       className="btn-continue"
-                      onClick={() => navigate(`/course/${enrollment.course_id}`)}
+                      onClick={() => navigate(`/course-learning/${enrollment.course_id}`)}
                     >
                       Tiếp tục học →
                     </button>
@@ -178,7 +185,7 @@ const UserProfile: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

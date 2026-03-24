@@ -89,6 +89,7 @@ export const completeCourse = createAsyncThunk(
   }
 );
 
+
 const enrollmentSlice = createSlice({
   name: "enrollment",
   initialState,

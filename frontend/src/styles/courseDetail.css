@@ -306,3 +306,66 @@
         font-size: 14px;
     }
 }
+
+/* Course Lessons Section */
+.course-lessons {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.course-lessons h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.course-lessons ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.lesson-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transition: background-color 0.3s;
+}
+
+.lesson-item:hover {
+    background-color: #f1f1f1;
+}
+
+.lesson-item span {
+    font-size: 16px;
+    color: #333;
+}
+
+.quiz-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.quiz-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.no-quiz-text {
+    font-size: 14px;
+    color: #999;
+    font-style: italic;
+}

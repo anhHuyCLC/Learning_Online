@@ -8,7 +8,7 @@ import {
     getCourseEnrollmentCount,
     updateEnrollmentProgress,
     completeEnrollment,
-    getAllEnrollments
+    getAllEnrollments,
 } from "../models/enrollmentModel";
 
 // Get student's enrolled courses
@@ -201,7 +201,7 @@ export const updateProgress = async (req: any, res: any): Promise<void> => {
             return;
         }
 
-        await updateEnrollmentProgress(userId, courseId, progress);
+        await updateEnrollmentProgress(userId, courseId);
         
         res.status(200).json({
             success: true,
@@ -312,3 +312,4 @@ export const getAllEnrollmentsAdmin = async (req: any, res: any): Promise<void> 
         });
     }
 };
+

@@ -7,7 +7,7 @@ import {
     updateProgress,
     complete,
     getEnrollmentCount,
-    getAllEnrollmentsAdmin
+    getAllEnrollmentsAdmin,
 } from "../controllers/enrollmentController";
 import { authMiddleware } from "../middleware/authMiddleware";
 
@@ -36,5 +36,6 @@ enrollmentRouter.get("/courses/:courseId/enrollment-count", getEnrollmentCount);
 
 // Admin: Get all enrollments - admin only
 enrollmentRouter.get("/admin/enrollments", authMiddleware, getAllEnrollmentsAdmin);
+
 
 export default enrollmentRouter;

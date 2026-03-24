@@ -7,12 +7,14 @@ import {
 import authReducer from "../features/authSlice";
 import courseReducer from "../features/courseSlice";
 import enrollmentReducer from "../features/enrollmentSlice";
+import quizReducer from "../features/quizSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     courses: courseReducer,
     enrollment: enrollmentReducer,
+    quiz: quizReducer,
   },
 });
 

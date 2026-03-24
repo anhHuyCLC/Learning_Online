@@ -151,8 +151,11 @@ export default function CourseDetail() {
                     <div className="course-actions">
                         {isUserEnrolled ? (
                             <>
-                                <button className="course-detail-btn enrolled-btn" disabled>
-                                    ✓ Đã Đăng Ký
+                                <button
+                                    className="course-detail-btn view-course-btn"
+                                    onClick={() => navigate(`/course-learning/${courseId}`)}
+                                >
+                                    Vào học
                                 </button>
                                 <button
                                     className="course-detail-btn unenroll-btn"
@@ -160,12 +163,6 @@ export default function CourseDetail() {
                                     disabled={enrollmentLoading}
                                 >
                                     {enrollmentLoading ? "Đang xử lý..." : "Hủy Đăng Ký"}
-                                </button>
-                                <button
-                                    className="course-detail-btn my-courses-btn"
-                                    onClick={() => navigate("/my-enrollments")}
-                                >
-                                    Xem Khóa Học Của Tôi
                                 </button>
                             </>
                         ) : (

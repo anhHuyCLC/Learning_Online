@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import userRoutes from "./routes/userRoutes";
 import courseRoutes from "./routes/courseRoute";
 import enrollmentRoutes from "./routes/enrollmentRoutes";
+import quizRoutes from "./routes/quizRoutes";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/users", userRoutes);
 app.use("/", courseRoutes);
 app.use("/", enrollmentRoutes);
+app.use("/quizzes", quizRoutes);
 
 // Error handling middleware
 app.use((err: any, req: any, res: any, next: any) => {

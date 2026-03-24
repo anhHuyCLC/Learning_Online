@@ -1,3 +1,10 @@
+export type Lesson = {
+  id: number;
+  title: string;
+  lesson_order: number;
+  has_quiz: boolean;
+};
+
 export type Courses = {
   id: number;
   name: string;
@@ -7,6 +14,7 @@ export type Courses = {
   teacher_name: string;
   description: string;
   detail_description?: string;
+  lessons?: Lesson[];
 };
 
 export type Enrollment = {

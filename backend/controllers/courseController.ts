@@ -32,11 +32,25 @@ export const getCourseById = async (req: any, res: any): Promise<void> => {
             });
             return;
         }
+
+        const course = courses[0];
+
+        // Fetch lessons for the course and check if a quiz exists for each lesson
+        const [lessons]: any = await db.execute(
+            `SELECT l.id, l.title, l.lesson_order, q.id IS NOT NULL AS has_quiz 
+             FROM lessons l
+             LEFT JOIN quizzes q ON l.id = q.lesson_id
+             WHERE l.course_id = ?
+             ORDER BY l.lesson_order`,
+            [id]
+        );
+
+        course.lessons = lessons;
         
         res.status(200).json({
             success: true,
             message: "Lấy khóa học thành công",
-            course: courses[0]
+            course: course
         });
     } catch (error) {
         console.error("Get course error:", error);

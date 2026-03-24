@@ -1,0 +1,74 @@
+.course-learning-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .course-learning-header {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .course-learning-header h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+  }
+  
+  .lessons-list h2 {
+    font-size: 1.8rem;
+    color: var(--text-dark);
+    margin-bottom: 1rem;
+  }
+  
+  .lessons-list ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .lesson-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    transition: background-color 0.2s;
+  }
+  
+  .lesson-item:hover {
+    background-color: #f9f9f9;
+  }
+  
+  .lesson-item span {
+    font-size: 1.1rem;
+    color: var(--text-medium);
+  }
+  
+  .quiz-link {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+  
+  .quiz-link:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .no-quiz {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    padding: 0.5rem 1rem;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+  }
+  

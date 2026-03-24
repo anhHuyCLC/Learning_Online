@@ -94,12 +94,29 @@ export const getCourseEnrollmentCount = async (courseId: number) => {
 export const updateEnrollmentProgress = async (
     userId: number,
     courseId: number,
-    progress: number
 ) => {
     const [result]: any = await db.execute(
-        `UPDATE enrollments SET progress = ? 
-        WHERE user_id = ? AND course_id = ? AND status = 'active'`,
-        [progress, userId, courseId]
+        `UPDATE enrollments e
+        JOIN (
+            SELECT 
+                p.user_id, 
+                l.course_id,
+                (SUM(p.completed) * 100.0 / total_stats.total_lessons) AS calculated_progress
+            FROM progress p
+            JOIN lessons l ON p.lesson_id = l.id
+            JOIN (
+                SELECT course_id, COUNT(*) AS total_lessons
+                FROM lessons
+                WHERE course_id = ?
+            ) total_stats ON l.course_id = total_stats.course_id
+            WHERE p.user_id = ? AND l.course_id = ?
+            GROUP BY p.user_id, l.course_id
+        ) AS summary ON e.user_id = summary.user_id AND e.course_id = summary.course_id
+        SET 
+            e.progress = summary.calculated_progress,
+            e.status = CASE WHEN summary.calculated_progress >= 100 THEN 'completed' ELSE 'active' END
+        WHERE e.user_id = ? AND e.course_id = ? AND e.status != 'cancelled'`,
+        [courseId, userId, courseId, userId, courseId]
     );
     return result;
 };
