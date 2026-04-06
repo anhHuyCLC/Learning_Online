@@ -3,9 +3,8 @@ import {
     getStudentEnrollments,
     checkEnrollment,
     enrollInCourse,
+    reEnrollInCourse,
     unenrollFromCourse,
-    updateProgress,
-    complete,
     getEnrollmentCount,
     getAllEnrollmentsAdmin,
 } from "../controllers/enrollmentController";
@@ -22,14 +21,11 @@ enrollmentRouter.get("/courses/:courseId/check-enrollment", authMiddleware, chec
 // Enroll in course - protected
 enrollmentRouter.post("/enrollments", authMiddleware, enrollInCourse);
 
+// Re-enroll in course - protected
+enrollmentRouter.post("/enrollments/reenroll", authMiddleware, reEnrollInCourse);
+
 // Unenroll from course - protected
 enrollmentRouter.delete("/enrollments/:courseId", authMiddleware, unenrollFromCourse);
-
-// Update enrollment progress - protected
-enrollmentRouter.put("/enrollments/progress", authMiddleware, updateProgress);
-
-// Complete course - protected
-enrollmentRouter.post("/enrollments/complete", authMiddleware, complete);
 
 // Get enrollment count for course - public
 enrollmentRouter.get("/courses/:courseId/enrollment-count", getEnrollmentCount);

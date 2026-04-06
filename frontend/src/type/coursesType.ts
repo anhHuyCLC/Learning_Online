@@ -3,6 +3,8 @@ export type Lesson = {
   title: string;
   lesson_order: number;
   has_quiz: boolean;
+  video_url?: string;
+  content?: string;
 };
 
 export type Courses = {

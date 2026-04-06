@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { getQuizByLessonId, submitQuiz as submitQuizService } from '../services/quizService';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { checkQuizStatus, getQuizByLessonId, submitQuiz as submitQuizService } from '../services/quizService';
 
 // Interfaces for our quiz data structures
 export interface QuestionOption {
@@ -27,7 +27,6 @@ export interface QuizResult {
   message: string;
 }
 
-// The state for this slice
 interface QuizState {
   quiz: Quiz | null;
   result: QuizResult | null;
@@ -35,12 +34,45 @@ interface QuizState {
   error: string | null;
 }
 
+export interface QuizStatus {
+  hasAttempted: boolean;
+  highestScore: number | null;
+  isPassed: boolean;
+}
+
+interface QuizState {
+  quiz: Quiz | null;
+  result: QuizResult | null;
+  passedLessonQuizzes: { [lessonId: number]: boolean }; // MỚI: Lưu trạng thái pass theo lesson_id
+  loading: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null;
+}
+
 const initialState: QuizState = {
   quiz: null,
   result: null,
+  passedLessonQuizzes: {},
   loading: 'idle',
   error: null,
 };
+
+export const fetchQuizStatus = createAsyncThunk<
+  { lessonId: number, status: QuizStatus },
+  number,
+  { rejectValue: string }
+>('quiz/fetchStatus', async (lessonId, { rejectWithValue }) => {
+  try {
+    const data = await checkQuizStatus(lessonId);
+    return { lessonId, status: data };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
+    return rejectWithValue(error.message || 'Failed to fetch quiz status');
+  }
+});
+
 
 // Async thunk to fetch a quiz by its lesson ID
 export const fetchQuizByLessonId = createAsyncThunk<
@@ -51,7 +83,11 @@ export const fetchQuizByLessonId = createAsyncThunk<
   try {
     const data = await getQuizByLessonId(lessonId);
     return data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
     return rejectWithValue(error.message || 'Failed to fetch quiz');
   }
 });
@@ -65,7 +101,11 @@ export const submitQuiz = createAsyncThunk<
   try {
     const data = await submitQuizService(id, answers);
     return data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    if (error instanceof Error) {
+      return rejectWithValue(error.message);
+    }
     return rejectWithValue(error.message || 'Failed to submit quiz');
   }
 });
@@ -109,8 +149,12 @@ const quizSlice = createSlice({
       .addCase(submitQuiz.rejected, (state, action) => {
         state.loading = 'failed';
         state.error = action.payload || 'Failed to submit quiz';
+      })
+      .addCase(fetchQuizStatus.fulfilled, (state, action) => {
+        const { lessonId, status } = action.payload;
+        state.passedLessonQuizzes[lessonId] = status.isPassed;
       });
-  },
+},
 });
 
 export const { resetQuiz } = quizSlice.actions;

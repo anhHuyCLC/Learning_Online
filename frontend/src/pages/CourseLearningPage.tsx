@@ -1,25 +1,32 @@
 import React, { useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { getCourseById } from '../features/courseSlice';
+import { getProgressForCourse, markLessonAsCompleted } from '../features/progressSlice';
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
-import { Lesson } from '../type/coursesType';
+import type { Lesson } from '../type/coursesType';
 import '../styles/courseLearning.css';
 
 const CourseLearningPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const courseId = parseInt(id || '0', 10);
   const dispatch = useAppDispatch();
   const { courses, loading, error } = useAppSelector((state) => state.courses);
+  const { completedLessons } = useAppSelector((state) => state.progress);
   const course = courses?.[0];
 
   useEffect(() => {
-    if (id) {
-      dispatch(getCourseById(parseInt(id, 10)));
+    if (courseId) {
+      dispatch(getCourseById(courseId));
+      dispatch(getProgressForCourse(courseId));
     }
-  }, [dispatch, id]);
+  }, [dispatch, courseId]);
+
+  const handleMarkAsCompleted = (lessonId: number) => {
+    dispatch(markLessonAsCompleted({ lessonId, courseId }));
+  };
 
   if (loading) {
     return <Loading />;
@@ -51,22 +58,27 @@ const CourseLearningPage: React.FC = () => {
 
         <div className="lessons-list">
           <h2>Bài học</h2>
-          {course?.lessons && course?.lessons?.length > 0 ? (
+          {course.lessons && course.lessons.length > 0 ? (
             <ul>
-              {[...course.lessons] // tránh mutate state
-                .sort((a, b) => (a.lesson_order ?? 0) - (b.lesson_order ?? 0))
-                .map((lesson: Lesson) => (
-                  <li key={lesson.id} className="lesson-item">
-                    <span>{`Bài ${lesson.lesson_order}: ${lesson.title}`}</span>
-                    {lesson.has_quiz ? (
-                      <Link to={`/quiz/lesson/${lesson.id}`} className="quiz-link">
-                        Làm Quiz
+              {[...course.lessons]
+                .sort((a: Lesson, b: Lesson) => (a.lesson_order ?? 0) - (b.lesson_order ?? 0))
+                .map((lesson: Lesson, index) => {
+                  const isCompleted = completedLessons.includes(lesson.id);
+                  const prevLesson = course.lessons ? course.lessons[index - 1] : undefined;
+                  const isPrevLessonCompleted = prevLesson ? completedLessons.includes(prevLesson.id) : true;
+                  const isLocked = index !== 0 && !isPrevLessonCompleted;
+
+                  return (
+                    <li key={lesson.id} className={`lesson-item ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`}>
+                      <Link
+                        to={!isLocked ? `/courses/${courseId}/lessons/${lesson.id}` : '#'}
+                        className={`lesson-link ${isLocked ? 'disabled' : ''}`}
+                      >
+                        {`${lesson.title}`}
                       </Link>
-                    ) : (
-                      <span className="no-quiz">Chưa có quiz</span>
-                    )}
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
             </ul>
           ) : (
             <p>Chưa có bài học cho khóa học này.</p>

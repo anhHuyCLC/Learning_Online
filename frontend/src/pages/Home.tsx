@@ -1,12 +1,12 @@
-import { useNavigate, useParams } from "react-router-dom";
-// @ts-ignore
+import { useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import "../styles/home.css";
 import { useAppDispatch, useAppSelector } from "../app/store";
 import { useEffect } from "react";
 import { getCourses } from "../features/courseSlice";
 import { logout } from "../features/authSlice";
-import { Courses } from "../type/coursesType";
+import { type Courses } from "../type/coursesType";
+import type { RootState } from "../app/store";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ export default function Home() {
 
   const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
 
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector((state: RootState) => state.auth.user);
   const { courses, loading, error } = useAppSelector((state) => state.courses);
   const isLogin = !!user;
 
@@ -233,12 +233,9 @@ export default function Home() {
 
           <div className="courses-grid">
             {courses.map((course: Courses) => {
+              // Giả sử backend trả về đường dẫn tương đối nhất quán (ví dụ: /uploads/courses/image.png)
               const imageUrl = course.image
-                ? (course.image.startsWith("http")
-                  ? course.image
-                  : course.image.startsWith("/uploads")
-                    ? `${API_URL}${course.image}`
-                    : `${API_URL}/uploads/courses/${course.image}`)
+                ? `${API_URL}${course.image}`
                 : "https://via.placeholder.com/400x300?text=Course+Image";
               return (
                 <div key={course.id} className="course-card">

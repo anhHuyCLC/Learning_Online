@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../app/store";
 import { getStudentEnrollments, unenrollFromCourse } from "../features/enrollmentSlice";
 import { Header } from "../components/Header";
 import "../styles/enrollments.css";
-import { useNavigate } from "react-router-dom";
 
 const StudentEnrollments: React.FC = () => {
     const dispatch = useAppDispatch();
-    const navigate = useNavigate();
     const { enrollments, loading, error } = useAppSelector((state) => state.enrollment);
     const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
     const [unenrollingId, setUnenrollingId] = useState<number | null>(null);
-    const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
+    const API_URL = (import.meta as ImportMeta).env.VITE_API_URL || "http://localhost:3000";
 
     useEffect(() => {
         dispatch(getStudentEnrollments());
@@ -28,12 +26,21 @@ const StudentEnrollments: React.FC = () => {
         }
     };
 
-    const filteredEnrollments = enrollments.filter((enrollment) => {
-        if (filter === "active") return enrollment.status === "active";
-        if (filter === "completed") return enrollment.status === "completed";
-        return true;
-    });
+    const enrollmentCounts = useMemo(() => {
+        return {
+            all: enrollments.length,
+            active: enrollments.filter((e) => e.status === "active").length,
+            completed: enrollments.filter((e) => e.status === "completed").length,
+        };
+    }, [enrollments]);
 
+    const filteredEnrollments = useMemo(() => {
+        if (filter === "all") {
+            return enrollments;
+        }
+        return enrollments.filter((enrollment) => enrollment.status === filter);
+    }, [enrollments, filter]);
+    
     return (
         <div className="enrollments-page">
             <Header title="Khóa Học Của Tôi" subtitle="Danh sách các khóa học bạn đã đăng ký" />
@@ -49,21 +56,19 @@ const StudentEnrollments: React.FC = () => {
                         className={`filter-tab ${filter === "all" ? "active" : ""}`}
                         onClick={() => setFilter("all")}
                     >
-                        Tất Cả ({enrollments.length})
+                        Tất Cả ({enrollmentCounts.all})
                     </button>
                     <button
                         className={`filter-tab ${filter === "active" ? "active" : ""}`}
                         onClick={() => setFilter("active")}
                     >
-                        Đang Học (
-                        {enrollments.filter((e) => e.status === "active").length})
+                        Đang Học ({enrollmentCounts.active})
                     </button>
                     <button
                         className={`filter-tab ${filter === "completed" ? "active" : ""}`}
                         onClick={() => setFilter("completed")}
                     >
-                        Hoàn Thành (
-                        {enrollments.filter((e) => e.status === "completed").length})
+                        Hoàn Thành ({enrollmentCounts.completed})
                     </button>
                 </div>
 

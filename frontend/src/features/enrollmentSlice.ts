@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enrollmentService } from "../services/enrollmentService";
-import { Enrollment } from "../type/coursesType";
+import type { Enrollment } from "../type/coursesType";
 
 interface EnrollmentState {
   enrollments: Enrollment[];
@@ -65,31 +65,17 @@ export const unenrollFromCourse = createAsyncThunk(
   }
 );
 
-export const updateProgress = createAsyncThunk(
-  "enrollment/updateProgress",
-  async ({ courseId, progress }: { courseId: number; progress: number }, { rejectWithValue }) => {
-    try {
-      await enrollmentService.updateProgress(courseId, progress);
-      return { courseId, progress };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || "Failed to update progress");
-    }
-  }
-);
-
-export const completeCourse = createAsyncThunk(
-  "enrollment/completeCourse",
+export const reEnrollInCourse = createAsyncThunk(
+  "enrollment/reEnrollInCourse",
   async (courseId: number, { rejectWithValue }) => {
     try {
-      await enrollmentService.completeCourse(courseId);
+      await enrollmentService.reEnrollInCourse(courseId);
       return courseId;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || "Failed to complete course");
+      return rejectWithValue(error.response?.data?.message || "Failed to re-enroll");
     }
   }
 );
-
-
 const enrollmentSlice = createSlice({
   name: "enrollment",
   initialState,
@@ -170,41 +156,27 @@ const enrollmentSlice = createSlice({
       state.error = action.payload as string;
     });
 
-    // Update progress
-    builder.addCase(updateProgress.pending, (state) => {
+    // Re-enroll in course
+    builder.addCase(reEnrollInCourse.pending, (state) => {
+      state.loading = true;
       state.error = null;
     });
-    builder.addCase(updateProgress.fulfilled, (state, action) => {
-      const { courseId, progress } = action.payload;
-      if (state.enrollmentData[courseId]) {
-        state.enrollmentData[courseId]!.progress = progress;
-      }
-      const enrollment = state.enrollments.find((e) => e.course_id === courseId);
-      if (enrollment) {
-        enrollment.progress = progress;
-      }
-    });
-    builder.addCase(updateProgress.rejected, (state, action) => {
-      state.error = action.payload as string;
-    });
-
-    // Complete course
-    builder.addCase(completeCourse.pending, (state) => {
-      state.error = null;
-    });
-    builder.addCase(completeCourse.fulfilled, (state, action) => {
+    builder.addCase(reEnrollInCourse.fulfilled, (state, action) => {
+      state.loading = false;
       const courseId = action.payload;
+      state.isEnrolled[courseId] = true; // Mark as enrolled again
       if (state.enrollmentData[courseId]) {
-        state.enrollmentData[courseId]!.status = "completed";
-        state.enrollmentData[courseId]!.progress = 100;
+        state.enrollmentData[courseId]!.status = "active";
+        state.enrollmentData[courseId]!.progress = 0;
       }
       const enrollment = state.enrollments.find((e) => e.course_id === courseId);
       if (enrollment) {
-        enrollment.status = "completed";
-        enrollment.progress = 100;
+        enrollment.status = "active";
+        enrollment.progress = 0;
       }
     });
-    builder.addCase(completeCourse.rejected, (state, action) => {
+    builder.addCase(reEnrollInCourse.rejected, (state, action) => {
+      state.loading = false;
       state.error = action.payload as string;
     });
   }

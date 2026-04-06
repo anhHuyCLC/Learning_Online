@@ -1,24 +1,4 @@
-import axios from "axios";
-
-const API_URL =
-  (import.meta as any).env.VITE_API_URL || "http://localhost:3000/api";
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Add token to requests
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import apiClient from "./apiClient";
 
 // Get a quiz by its lesson ID
 export const getQuizByLessonId = async (lessonId: number) => {
@@ -47,5 +27,14 @@ export const submitQuiz = async (id: number, answers: { questionId: number; sele
     return res.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to submit quiz");
+  }
+};
+
+export const checkQuizStatus = async (lessonId: number) => {
+  try {
+    const res = await apiClient.get(`/quizzes/lesson/${lessonId}/status`);
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to check quiz status");
   }
 };

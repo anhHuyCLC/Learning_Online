@@ -29,3 +29,25 @@ export const authMiddleware = (req: any, res: any, next: any) => {
     });
   }
 };
+
+export const isTeacher = (req: any, res: any, next: any) => {
+  if (req.user && req.user.role === "teacher") {
+    next();
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Teacher role required."
+    });
+  }
+};
+
+export const isAdmin = (req: any, res: any, next: any) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Admin role required."
+    });
+  }
+};

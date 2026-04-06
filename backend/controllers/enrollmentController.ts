@@ -5,11 +5,11 @@ import {
     createEnrollment,
     deleteEnrollment,
     reactivateEnrollment,
+    reEnroll,
     getCourseEnrollmentCount,
-    updateEnrollmentProgress,
-    completeEnrollment,
     getAllEnrollments,
 } from "../models/enrollmentModel";
+import Progress from "../models/lessonProgressModel";
 
 // Get student's enrolled courses
 export const getStudentEnrollments = async (req: any, res: any): Promise<void> => {
@@ -103,7 +103,8 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
                 });
                 return;
             } else if (existingEnrollment.status === 'cancelled') {
-                // Re-activate cancelled enrollment
+                // Re-activate cancelled enrollment and clear progress
+                await Progress.deleteProgressForCourse(userId, courseId);
                 await reactivateEnrollment(userId, courseId);
                 res.status(201).json({
                     success: true,
@@ -123,6 +124,44 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
         });
     } catch (error) {
         console.error("Enroll error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Lỗi server"
+        });
+    }
+};
+
+export const reEnrollInCourse = async (req: any, res: any): Promise<void> => {
+    try {
+        const userId = req.user?.id;
+        const { courseId } = req.body;
+
+        if (!userId) {
+            res.status(401).json({
+                success: false,
+                message: "Yêu cầu xác thực"
+            });
+            return;
+        }
+
+        if (!courseId) {
+            res.status(400).json({
+                success: false,
+                message: "Vui lòng cung cấp ID khóa học"
+            });
+            return;
+        }
+
+        // Reset progress and enrollment status
+        await Progress.deleteProgressForCourse(userId, courseId);
+        await reEnroll(userId, courseId);
+
+        res.status(200).json({
+            success: true,
+            message: "Ghi danh lại khóa học thành công"
+        });
+    } catch (error) {
+        console.error("Re-enroll error:", error);
         res.status(500).json({
             success: false,
             message: "Lỗi server"
@@ -169,99 +208,9 @@ export const unenrollFromCourse = async (req: any, res: any): Promise<void> => {
     }
 };
 
-// Update enrollment progress
-export const updateProgress = async (req: any, res: any): Promise<void> => {
-    try {
-        const userId = req.user?.id;
-        const { courseId, progress } = req.body;
-        
-        if (!userId) {
-            res.status(401).json({
-                success: false,
-                message: "Yêu cầu xác thực"
-            });
-            return;
-        }
 
-        if (!courseId || progress === undefined || progress < 0 || progress > 100) {
-            res.status(400).json({
-                success: false,
-                message: "Thông tin không hợp lệ"
-            });
-            return;
-        }
 
-        const enrollment = await getEnrollmentByUserAndCourse(userId, courseId);
-        
-        if (enrollment.length === 0) {
-            res.status(404).json({
-                success: false,
-                message: "Không tìm thấy đăng ký"
-            });
-            return;
-        }
 
-        await updateEnrollmentProgress(userId, courseId);
-        
-        res.status(200).json({
-            success: true,
-            message: "Cập nhật tiến độ thành công"
-        });
-    } catch (error) {
-        console.error("Update progress error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Lỗi server"
-        });
-    }
-};
-
-// Complete enrollment
-export const complete = async (req: any, res: any): Promise<void> => {
-    try {
-        const userId = req.user?.id;
-        const { courseId } = req.body;
-        
-        if (!userId) {
-            res.status(401).json({
-                success: false,
-                message: "Yêu cầu xác thực"
-            });
-            return;
-        }
-
-        if (!courseId) {
-            res.status(400).json({
-                success: false,
-                message: "Vui lòng cung cấp ID khóa học"
-            });
-            return;
-        }
-
-        const enrollment = await getEnrollmentByUserAndCourse(userId, courseId);
-        
-        if (enrollment.length === 0) {
-            res.status(404).json({
-                success: false,
-                message: "Không tìm thấy đăng ký"
-            });
-            return;
-        }
-
-        await completeEnrollment(userId, courseId);
-        
-        res.status(200).json({
-            success: true,
-            message: "Hoàn thành khóa học thành công"
-        });
-    } catch (error) {
-        console.error("Complete enrollment error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Lỗi server"
-        });
-    }
-};
 
 // Get course enrollment count
 export const getEnrollmentCount = async (req: any, res: any): Promise<void> => {

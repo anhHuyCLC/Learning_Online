@@ -1,221 +1,112 @@
-import { useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../app/store";
-import { logout } from "../features/authSlice";
-import "../styles/dashboard.css";
-import { useState } from "react";
+import { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../app/store';
+import { fetchTeacherDashboardData } from '../features/teacherSlice';
+import '../styles/Dashboard.css';
+import { useNavigate } from 'react-router-dom';
 
-export default function TeacherDashboard() {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const TeacherDashboard = () => {
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    const { stats, courses, loading, error } = useAppSelector((state) => state.teacher);
+    const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
 
-  if (user?.role !== "teacher") {
+    useEffect(() => {
+        dispatch(fetchTeacherDashboardData());
+    }, [dispatch]);
+
+    const statItems = [
+        { icon: '📚', title: 'Tổng Khóa Học', value: stats.totalCourses, color: 'icon-primary' },
+        { icon: '👥', title: 'Tổng Học Viên', value: stats.totalStudents, color: 'icon-indigo' },
+        { icon: '💰', title: 'Tổng Doanh Thu', value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.totalRevenue || 0), color: 'icon-emerald' },
+    ];
+
+    const handleViewStudents = (course: any) => {
+        navigate(`/teacher/courses/${course.id}/students`);
+    };
+
     return (
-      <div className="auth-page">
-        <div className="auth-container">
-          <div className="auth-form-side">
-            <div>
-              <h1>Truy cập bị từ chối</h1>
-              <p className="auth-subtitle">
-                Bạn không có quyền truy cập trang này. Chỉ giáo viên mới có thể xem bảng điều khiển này.
-              </p>
-              <button
-                className="auth-button auth-btn-primary"
-                onClick={() => navigate("/")}
-                style={{ marginTop: "24px" }}
-              >
-                Quay lại trang chủ
-              </button>
-            </div>
-          </div>
-          <div className="auth-image-side">
-            <div className="image-content">
-              <div className="image-icon">🔒</div>
-              <h2>Bảo mật</h2>
-              <p>Trang này được bảo vệ và chỉ dành cho giáo viên.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/");
-  };
-
-  const stats = [
-    { icon: "📚", title: "Khóa Học Của Tôi", value: "5", meta: "2 khóa hoạt động" },
-    { icon: "👥", title: "Tổng Học Viên", value: "342", meta: "+45 tuần này" },
-    { icon: "⭐", title: "Đánh Giá Trung Bình", value: "4.7/5", meta: "từ 156 đánh giá" },
-    { icon: "📊", title: "Tỉ Lệ Hoàn Thành", value: "68%", meta: "+8% so với tháng trước" },
-  ];
-
-  const myCourses = [
-    { id: 1, name: "React Mastery", students: 89, rating: 4.8 },
-    { id: 2, name: "Node.js Backend", students: 76, rating: 4.6 },
-    { id: 3, name: "TypeScript Advanced", students: 63, rating: 4.9 },
-    { id: 4, name: "Web Security", students: 54, rating: 4.7 },
-    { id: 5, name: "API Design", students: 60, rating: 4.5 },
-  ];
-
-  return (
-    <div className="dashboard-container">
-      <div className="dashboard-layout">
-        {/* Sidebar */}
-        <aside className={`dashboard-sidebar ${sidebarOpen ? "open" : ""}`}>
-          <div className="sidebar-logo">
-            <h3 style={{ color: "white", margin: 0 }}>Giảng Dạy</h3>
-          </div>
-          <ul className="sidebar-menu">
-            <li className="sidebar-item">
-              <a href="#" className="sidebar-link active">
-                <span className="sidebar-icon">📊</span>
-                Bảng Điều Khiển
-              </a>
-            </li>
-            <li className="sidebar-item">
-              <a href="#" className="sidebar-link">
-                <span className="sidebar-icon">📚</span>
-                Khóa Học Của Tôi
-              </a>
-            </li>
-            <li className="sidebar-item">
-              <a href="#" className="sidebar-link">
-                <span className="sidebar-icon">✍️</span>
-                Tạo Khóa Học
-              </a>
-            </li>
-            <li className="sidebar-item">
-              <a href="#" className="sidebar-link">
-                <span className="sidebar-icon">💬</span>
-                Tin Nhắn
-              </a>
-            </li>
-            <li className="sidebar-item">
-              <a href="#" className="sidebar-link">
-                <span className="sidebar-icon">⚙️</span>
-                Cài Đặt
-              </a>
-            </li>
-          </ul>
-        </aside>
-
-        {/* Header */}
-        <header className="dashboard-header">
-          <h1 className="header-title">Bảng Điều Khiển Giáo Viên</h1>
-          <div className="header-actions">
-            <div className="user-menu">
-              <div className="user-avatar">{user?.name?.charAt(0).toUpperCase() || "T"}</div>
-              <span className="user-name">{user?.name}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              style={{
-                background: "#ef4444",
-                color: "white",
-                border: "none",
-                padding: "8px 16px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontWeight: "600",
-              }}
-            >
-              Đăng Xuất
-            </button>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="dashboard-main">
-          <h1 className="main-title">Chào mừng, {user?.name}!</h1>
-          <p className="main-subtitle">Quản lý khóa học và học viên của bạn</p>
-
-          {/* Stats Grid */}
-          <div className="dashboard-grid">
-            {stats.map((stat, index) => (
-              <div key={index} className="widget-card">
-                <div className="widget-header">
-                  <div>
-                    <div className="widget-title">{stat.title}</div>
-                    <div className="widget-meta">{stat.meta}</div>
-                  </div>
-                  <div className="widget-icon">{stat.icon}</div>
+        <div className="dashboard-container">
+            <div className="dashboard-header">
+                <div className="header-info">
+                    <h1 className="heading-1">Bảng Điều Khiển Giáo Viên</h1>
+                    <p className="text-muted">Quản lý khóa học và theo dõi hiệu suất của bạn.</p>
                 </div>
-                <div className="widget-value">{stat.value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* My Courses */}
-          <div className="table-container">
-            <div style={{ padding: "24px" }}>
-              <h2 style={{ marginTop: 0, marginBottom: "24px" }}>Khóa Học Của Tôi</h2>
-              <table className="dashboard-table" style={{ width: "100%" }}>
-                <thead>
-                  <tr>
-                    <th>Tên Khóa Học</th>
-                    <th>Số Học Viên</th>
-                    <th>Đánh Giá</th>
-                    <th>Hành Động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myCourses.map((course) => (
-                    <tr key={course.id}>
-                      <td>
-                        <strong>{course.name}</strong>
-                      </td>
-                      <td>{course.students} học viên</td>
-                      <td>
-                        <strong>⭐ {course.rating}/5</strong>
-                      </td>
-                      <td>
-                        <button
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#0066ff",
-                            cursor: "pointer",
-                            textDecoration: "underline",
-                            fontWeight: "600",
-                          }}
-                        >
-                          Chỉnh Sửa
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          </div>
 
-          {/* Action Section */}
-          <div className="form-section">
-            <h2 style={{ marginTop: 0 }}>Tạo Khóa Học Mới</h2>
-            <p style={{ color: "var(--muted)", marginBottom: "24px" }}>
-              Chia sẻ kiến thức của bạn và tạo một khóa học mới cho cộng đồng
-            </p>
-            <button
-              style={{
-                background: "linear-gradient(135deg, var(--primary), var(--accent))",
-                color: "white",
-                border: "none",
-                padding: "12px 32px",
-                borderRadius: "9999px",
-                fontWeight: "700",
-                cursor: "pointer",
-                fontSize: "16px",
-              }}
-            >
-              + Tạo Khóa Học
-            </button>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
+            {/* Stats Grid */}
+            <div className="stats-grid">
+                {statItems.map(item => (
+                    <div key={item.title} className="stat-card">
+                        <div className="stat-header">
+                            <div className={`stat-icon ${item.color}`}>{item.icon}</div>
+                        </div>
+                        <p className="stat-title">{item.title}</p>
+                        <h3 className="stat-value">{item.value}</h3>
+                    </div>
+                ))}
+            </div>
+
+            {/* My Courses Table */}
+            <div className="card">
+                <div className="card-header">
+                    <h2 className="heading-2">Các Khóa Học Của Tôi</h2>
+                    <button className="btn-primary btn-sm" onClick={() => navigate('/teacher/courses/new')}>Tạo khóa học mới</button>
+                </div>
+
+                {loading && courses.length === 0 && <div className="loading-container"><div className="spinner"></div></div>}
+                {error && <div className="error-container">{error}</div>}
+
+                {!loading && !error && (
+                    courses.length === 0 ? (
+                        <div className="text-center p-4">
+                            <span style={{ fontSize: '48px' }}>📭</span>
+                            <h3 className="heading-2 mt-4">Bạn chưa có khóa học nào</h3>
+                            <p className="text-muted mt-4">Hãy bắt đầu tạo khóa học đầu tiên để chia sẻ kiến thức của bạn.</p>
+                            <button className="btn-primary mt-4" onClick={() => navigate('/teacher/courses/new')}>Tạo khóa học ngay</button>
+                        </div>
+                    ) : (
+                    <div className="table-container">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Khóa học</th>
+                                    <th>Giá</th>
+                                    <th>Số học viên</th>
+                                    <th>Ngày tạo</th>
+                                    <th className="text-center">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {courses.map((course) => (
+                                    <tr key={course.id}>
+                                        <td>
+                                            <div className="user-info">
+                                                <img 
+                                                    src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${course.name.charAt(0)}`} 
+                                                    alt={course.name} 
+                                                    className="avatar" 
+                                                    style={{ borderRadius: '8px', objectFit: 'cover' }} 
+                                                />
+                                                <span className="user-name">{course.name}</span>
+                                            </div>
+                                        </td>
+                                        <td>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}</td>
+                                        <td>{course.enrollment_count || 0}</td>
+                                        <td>{new Date(course.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td className="text-center">
+                                            <button className="btn-secondary btn-sm" onClick={() => handleViewStudents(course)}>Xem học viên</button>
+                                            <button className="btn-text" style={{ marginLeft: '8px' }} onClick={() => navigate(`/teacher/courses/edit/${course.id}`)}>Quản lý</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    )
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default TeacherDashboard;

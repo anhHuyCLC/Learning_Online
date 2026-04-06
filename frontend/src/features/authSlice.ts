@@ -1,14 +1,33 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { login, register } from "../services/authService";
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
+import * as authService from '../services/authService'; // Import authService
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// Định nghĩa interface cho User. Đảm bảo có thuộc tính 'balance'.
 interface User {
   id: number;
-  avatar: string;
   name: string;
   email: string;
-  role: string;
+  role: 'admin' | 'teacher' | 'student';
+  balance: number; // Đã thêm thuộc tính balance
+  avatar?: string;
+  created_at: string;
 }
 
+// Định nghĩa interface cho dữ liệu đăng nhập
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+// Định nghĩa interface cho dữ liệu đăng ký
+interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+}
+// Định nghĩa interface cho trạng thái xác thực
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -16,101 +35,138 @@ interface AuthState {
   error: string | null;
 }
 
+// Khởi tạo trạng thái ban đầu từ localStorage
 const initialState: AuthState = {
-  user: JSON.parse(localStorage.getItem("user") || "null"),
-  token: localStorage.getItem("token"),
+  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  token: localStorage.getItem('token'),
   loading: false,
   error: null,
 };
 
-interface AuthResponse {
-  success: boolean;
-  user?: User;
-  message?: string;
-  token?: string;
-}
-
-export const loginUser = createAsyncThunk<
-  AuthResponse,
-  { email: string; password: string }
->("auth/loginUser", async ({ email, password }, { rejectWithValue }) => {
-  try {
-    const data = await login(email, password);
-    if (data.success && data.token) {
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-    }
-    return data;
-  } catch (error: any) {
-    return rejectWithValue(error.message);
-  }
-});
-
-export const registerUser = createAsyncThunk<
-  AuthResponse,
-  { name: string; email: string; password: string },
-  { rejectValue: string }
->(
-  "auth/registerUser",
-  async ({ name, email, password }, { rejectWithValue }) => {
+// Thunk để đăng nhập người dùng
+export const loginUser = createAsyncThunk(
+  'auth/loginUser',
+  async (userData: LoginData, { rejectWithValue }) => {
     try {
-      const data = await register(name, email, password);
-      return data;
+      const response = await authService.login(userData.email, userData.password);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('token', response.token);
+      return response;
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(error.response.data.message || 'Đăng nhập thất bại.');
+      }
+      return rejectWithValue(error.message || 'Lỗi mạng.');
     }
-  },
+  }
+);
+
+// Thunk để đăng ký người dùng
+export const registerUser = createAsyncThunk(
+  'auth/registerUser',
+  async (userData: RegisterData, { rejectWithValue }) => {
+    try {
+      const response = await authService.register(userData.name, userData.email, userData.password);
+      return response;
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Trả về thông báo lỗi từ backend
+        return rejectWithValue(error.response.data.message || 'Đăng ký thất bại.');
+      }
+      return rejectWithValue(error.message || 'Lỗi mạng.');
+    }
+  }
+);
+
+// Thunk mới: topUpBalance để nạp tiền vào tài khoản
+export const topUpBalance = createAsyncThunk(
+  'auth/topUpBalance',
+  async (amount: number, { rejectWithValue, getState }) => {
+    try {
+      // Lấy token từ trạng thái Redux để gửi kèm trong header xác thực
+      const state = getState() as { auth: AuthState };
+      const token = state.auth.token;
+      const currentUser = state.auth.user; // Lấy thông tin user hiện tại
+
+      if (!token || !currentUser) { // Thêm kiểm tra currentUser
+        return rejectWithValue('Không có thông tin người dùng hoặc token xác thực. Vui lòng đăng nhập lại.');
+      }
+
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      // Gửi yêu cầu POST đến API nạp tiền
+      const response = await axios.post(`${API_URL}/api/users/top-up`, { amount }, config);
+      
+      // Cập nhật thông tin người dùng trong localStorage với số dư mới
+      // Sử dụng currentUser đã kiểm tra null
+      const updatedUser = { ...currentUser, balance: response.data.newBalance };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      return response.data; // Trả về dữ liệu từ server (bao gồm newBalance và message)
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Trả về thông báo lỗi từ backend nếu có
+        return rejectWithValue(error.response.data.message || 'Lỗi khi nạp tiền.');
+      }
+      return rejectWithValue(error.message || 'Lỗi mạng.');
+    }
+  }
 );
 
 const authSlice = createSlice({
-  name: "auth",
+  name: 'auth',
   initialState,
   reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
     logout: (state) => {
       state.user = null;
       state.token = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-    },
-    clearError: (state) => {
-      state.error = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
     },
   },
   extraReducers: (builder) => {
     builder
+      // --- Các extraReducers hiện có cho loginUser, registerUser sẽ ở đây ---
+      // Xử lý loginUser thunk
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload.success) {
-          state.user = action.payload.user || null;
-          state.token = action.payload.token || null;
-        } else {
-          state.error = action.payload.message || "Login failed";
-        }
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = (action.payload as string) || "Login failed";
+        state.user = null;
+        state.token = null;
+        state.error = action.payload as string;
       })
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
+      // Xử lý registerUser thunk
+      .addCase(registerUser.pending, (state, _action) => { state.loading = true; state.error = null; })
+      .addCase(registerUser.fulfilled, (state, _action) => { state.loading = false; state.error = null; })
+      .addCase(registerUser.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; })
+
+      // Xử lý topUpBalance thunk
+      .addCase(topUpBalance.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(topUpBalance.fulfilled, (state, action: PayloadAction<{ success: boolean; message: string; newBalance: number }>) => {
+        state.loading = false;
+        if (state.user) { state.user.balance = action.payload.newBalance; }
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        if (!action.payload.success) {
-          state.error = action.payload.message || "Register failed";
-        }
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = (action.payload as string) || "Register failed";
-      });
+      .addCase(topUpBalance.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; });
   },
 });
 
-export const { logout, clearError } = authSlice.actions;
+export const { clearError, logout } = authSlice.actions;
 export default authSlice.reducer;

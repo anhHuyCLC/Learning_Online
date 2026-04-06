@@ -1,5 +1,14 @@
 import express from "express";
-import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse } from "../controllers/courseController.js";
+import { 
+    getCourses, 
+    getCourseById, 
+    getLessonById, 
+    createCourse, 
+    updateCourse, 
+    deleteCourse, 
+    getTeacherCourses,
+    createLesson, updateLesson, deleteLesson // Thêm lesson controllers
+} from "../controllers/courseController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const courseRouter = express.Router();
@@ -10,6 +19,9 @@ courseRouter.get("/courses", authMiddleware, getCourses);
 // Get course by ID - protected
 courseRouter.get("/courses/:id", authMiddleware, getCourseById);
 
+// Get lesson by ID - protected
+courseRouter.get("/lessons/:lessonId", authMiddleware, getLessonById);
+
 // Create course - protected
 courseRouter.post("/courses", authMiddleware, createCourse);
 
@@ -18,5 +30,13 @@ courseRouter.put("/courses/:id", authMiddleware, updateCourse);
 
 // Delete course - protected
 courseRouter.delete("/courses/:id", authMiddleware, deleteCourse);
+
+courseRouter.get("/teacher/courses", authMiddleware, getTeacherCourses);
+
+// Lesson Management Routes (for teachers)
+courseRouter.post("/courses/:courseId/lessons", authMiddleware, createLesson);
+courseRouter.put("/lessons/:lessonId", authMiddleware, updateLesson);
+courseRouter.delete("/lessons/:lessonId", authMiddleware, deleteLesson);
+
 
 export default courseRouter;

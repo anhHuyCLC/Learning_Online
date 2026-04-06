@@ -31,18 +31,13 @@ function Login() {
     }
   }, [user, navigate]);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!email || !password) {
       return;
     }
 
     await dispatch(loginUser({ email, password }));
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !loading) {
-      handleLogin();
-    }
   };
 
   return (
@@ -57,7 +52,7 @@ function Login() {
 
             {error && <div className="auth-message message-error">{error}</div>}
 
-            <form className="auth-form" onSubmit={(e) => e.preventDefault()}>
+            <form className="auth-form" onSubmit={handleLogin}>
               <div className="form-group">
                 <label className="form-label">Email</label>
                 <input
@@ -66,7 +61,6 @@ function Login() {
                   className="form-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyPress={handleKeyPress}
                   disabled={loading}
                   required
                 />
@@ -80,16 +74,14 @@ function Login() {
                   className="form-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyPress={handleKeyPress}
                   disabled={loading}
                   required
                 />
               </div>
 
               <button
-                type="button"
+                type="submit"
                 className="auth-button auth-btn-primary"
-                onClick={handleLogin}
                 disabled={loading || !email || !password}
               >
                 {loading ? (

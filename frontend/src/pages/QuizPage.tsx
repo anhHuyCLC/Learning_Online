@@ -5,7 +5,7 @@ import { fetchQuizByLessonId, submitQuiz, resetQuiz } from '../features/quizSlic
 import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 import './../styles/quiz.css';
-import { Question, QuestionOption } from '../features/quizSlice';
+import type { Question, QuestionOption } from '../features/quizSlice';
 const QuizPage: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();

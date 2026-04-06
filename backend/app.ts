@@ -7,6 +7,9 @@ import userRoutes from "./routes/userRoutes";
 import courseRoutes from "./routes/courseRoute";
 import enrollmentRoutes from "./routes/enrollmentRoutes";
 import quizRoutes from "./routes/quizRoutes";
+import lessonProgressRoutes from "./routes/lessonProgressRoutes";
+import teacherRoutes from "./routes/teacherRoutes";
+import adminRoutes from "./routes/adminRoutes";
 
 dotenv.config();
 
@@ -23,10 +26,15 @@ app.use(express.json());
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use("/users", userRoutes);
-app.use("/", courseRoutes);
-app.use("/", enrollmentRoutes);
-app.use("/quizzes", quizRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api", courseRoutes);
+app.use("/api", enrollmentRoutes);
+app.use("/api/quizzes", quizRoutes);
+app.use('/api/progress', lessonProgressRoutes);
+
+// Protected dashboard routes
+app.use("/api/teacher", teacherRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Error handling middleware
 app.use((err: any, req: any, res: any, next: any) => {

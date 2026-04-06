@@ -45,9 +45,36 @@
     background-color: #f9f9f9;
   }
   
+  .lesson-item.completed {
+    background-color: #e8f5e9; /* Light green to indicate completion */
+    border-left: 5px solid var(--primary-color);
+  }
+  
   .lesson-item span {
     font-size: 1.1rem;
     color: var(--text-medium);
+  }
+
+  .lesson-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .complete-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .complete-btn:disabled {
+    background-color: #a5d6a7;
+    cursor: not-allowed;
   }
   
   .quiz-link {
@@ -63,6 +90,13 @@
   .quiz-link:hover {
     background-color: var(--primary-dark);
   }
+
+  .quiz-link.disabled {
+    background-color: #cccccc;
+    color: #666666;
+    pointer-events: none; /* Disables click events */
+    cursor: not-allowed;
+  }
   
   .no-quiz {
     font-size: 0.9rem;
@@ -70,5 +104,37 @@
     padding: 0.5rem 1rem;
     background-color: #f0f0f0;
     border-radius: 5px;
+  }
+  .lesson-video-container {
+    margin-bottom: 2rem;
+  }
+  .lesson-item.locked {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  
+  .lesson-link {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    text-decoration: none;
+    color: var(--text-dark);
+    border-radius: 6px;
+  }
+  
+  .lesson-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  .next-lesson-link {
+    margin-left: auto;
+  }
+  
+  .next-lesson-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
   }
   

@@ -8,6 +8,9 @@ import authReducer from "../features/authSlice";
 import courseReducer from "../features/courseSlice";
 import enrollmentReducer from "../features/enrollmentSlice";
 import quizReducer from "../features/quizSlice";
+import progressReducer from "../features/progressSlice";
+import adminReducer from "../features/adminSlice";
+import teacherReducer from "../features/teacherSlice";
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +18,9 @@ export const store = configureStore({
     courses: courseReducer,
     enrollment: enrollmentReducer,
     quiz: quizReducer,
+    progress: progressReducer,
+    admin: adminReducer,
+    teacher: teacherReducer,
   },
 });
 

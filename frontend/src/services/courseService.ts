@@ -1,24 +1,4 @@
-import axios from "axios";
-
-const API_URL =
-  (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Add token to requests
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import apiClient from "./apiClient";
 
 export const fetchCourses = async () => {
   try {
@@ -28,6 +8,15 @@ export const fetchCourses = async () => {
     throw new Error(error.response?.data?.message || "Failed to fetch courses");
   }
 };
+
+export const fetchAllCoursesAdmin = async () => {
+  try {
+    const res = await apiClient.get("/admin/courses");
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to fetch all courses");
+  }
+}
 
 export const fetchCourseById = async (id: number) => {
   console.log("Fetching course with ID:", id);
@@ -39,18 +28,26 @@ export const fetchCourseById = async (id: number) => {
   }
 };
 
-export const createCourse = async (courseData: any) => {
+export const createCourse = async (courseData: FormData) => {
   try {
-    const res = await apiClient.post("/courses", courseData);
+    const res = await apiClient.post("/courses", courseData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to create course");
   }
 };
 
-export const updateCourse = async (id: number, courseData: any) => {
+export const updateCourse = async (id: number, courseData: FormData) => {
   try {
-    const res = await apiClient.put(`/courses/${id}`, courseData);
+    const res = await apiClient.put(`/courses/${id}`, courseData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to update course");
@@ -63,5 +60,23 @@ export const deleteCourse = async (id: number) => {
     return res.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to delete course");
+  }
+};
+
+export const fetchLessonById = async (id: number) => {
+  try {
+    const res = await apiClient.get(`/lessons/${id}`);
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to fetch lesson");
+  }
+};
+
+export const fetchCoursesByTeacher = async () => {
+  try {
+    const res = await apiClient.get("/teacher/courses");
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to fetch teacher courses");
   }
 };

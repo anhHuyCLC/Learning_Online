@@ -157,12 +157,14 @@ const UserProfile: React.FC = () => {
                     <div className="progress-container">
                       <div className="progress-label">
                         <span>Tiến độ học tập</span>
-                        <span className="progress-percent">{enrollment.progress}%</span>
+                        <span className="progress-percent">
+                          {Math.round(Number(enrollment.progress) || 0)}%
+                        </span>
                       </div>
                       <div className="progress-bar">
                         <div
                           className="progress-fill"
-                          style={{ width: `${enrollment.progress}%` }}
+                          style={{ width: `${Math.round(Number(enrollment.progress) || 0)}%` }}
                         ></div>
                       </div>
                     </div>
@@ -174,7 +176,7 @@ const UserProfile: React.FC = () => {
 
                     <button
                       className="btn-continue"
-                      onClick={() => navigate(`/course-learning/${enrollment.course_id}`)}
+                      onClick={() => navigate(`/courses/${enrollment.course_id}/learn`)}
                     >
                       Tiếp tục học →
                     </button>

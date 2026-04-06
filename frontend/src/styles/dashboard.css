@@ -1,13 +1,51 @@
 @import "./vars.css";
 
 /* ============================================
-   DASHBOARD LAYOUT
+   BIẾN MÀU SẮC ĐẶC TRƯNG (F8 THEME)
+   (Nếu trong vars.css chưa có, thì chúng sẽ lấy từ đây)
    ============================================ */
+:root {
+  --f8-primary: #f05123;
+  /* Màu cam đặc trưng F8 */
+  --f8-primary-hover: #d1411e;
+  --f8-primary-light: #ffeee8;
+  /* Màu nền nhạt cho icon/hover */
 
+  --f8-text-main: #292929;
+  /* Chữ đen đậm */
+  --f8-text-muted: #757575;
+  /* Chữ xám nhạt */
+
+  --f8-border: #e8e8e8;
+  /* Viền nhẹ */
+  --f8-bg-body: #f1f1f1;
+  /* Nền toàn trang */
+  --f8-bg-card: #ffffff;
+  /* Nền thẻ card */
+
+  --f8-success: #1dbfaf;
+  /* Màu xanh ngọc (cho huy hiệu/trend) */
+  --f8-success-light: #e4f7f5;
+  --f8-warning: #f59e0b;
+  --f8-warning-light: #fef3c7;
+  --f8-danger: #f43f5e;
+  --f8-danger-light: #ffe4e6;
+}
+
+/* ============================================
+   BỘ KHUNG GIAO DIỆN (LAYOUT & CONTAINER)
+   ============================================ */
 .dashboard-container {
   min-height: 100vh;
-  background: var(--bg-1);
-  color: var(--text);
+  background: var(--f8-bg-body);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--f8-text-main);
 }
 
 .dashboard-layout {
@@ -17,325 +55,768 @@
   gap: 0;
 }
 
-/* ============================================
-   DASHBOARD SIDEBAR
-   ============================================ */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: transparent;
+  /* Bỏ nền trắng ở header để hợp chuẩn F8 */
+}
 
-.dashboard-sidebar {
-  background: linear-gradient(180deg, #1a1d2e 0%, #242836 100%);
+/* ============================================
+   CHỮ & VĂN BẢN (TYPOGRAPHY)
+   ============================================ */
+.heading-1 {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0 0 8px 0;
+  color: var(--f8-text-main);
+  letter-spacing: -0.5px;
+}
+
+.heading-2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--f8-text-main);
+}
+
+.text-muted {
+  color: var(--f8-text-muted);
+  font-size: 15px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-mono {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 14px;
+}
+
+/* Các khoảng cách phụ trợ */
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+
+.mt-6 {
+  margin-top: 24px;
+}
+
+.p-4 {
+  padding: 16px;
+}
+
+/* ============================================
+   NÚT BẤM (BUTTONS) - STYLE F8
+   ============================================ */
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border-radius: 999px;
+  /* Bo tròn hoàn toàn (Pill) như F8 */
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: var(--f8-primary);
   color: white;
-  padding: 24px 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary:hover {
+  background-color: var(--f8-primary-hover);
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: #e8e8e8;
+  color: var(--f8-text-main);
+}
+
+.btn-secondary:hover {
+  background-color: #d4d4d4;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--f8-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0;
+}
+
+.btn-danger {
+  background-color: var(--f8-danger);
+  color: white;
+}
+.btn-danger:hover {
+  background-color: #c82a48;
+}
+
+/* Button sizes */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Icon colors */
+.icon-emerald {
+  background: var(--f8-success-light);
+  color: var(--f8-success);
+}
+
+.btn-text:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   HỆ THỐNG LƯỚI (GRIDS)
+   ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+/* ============================================
+   THẺ GIAO DIỆN (CARDS)
+   ============================================ */
+.card,
+.stat-card {
+  background: var(--f8-bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--f8-border);
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  /* Bóng đổ nhẹ */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover,
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.border-bottom {
+  border-bottom: 1px solid var(--f8-border);
+  padding-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.chart-container {
+  height: 300px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* ============================================
+   THẺ THỐNG KÊ CHI TIẾT (STAT CARDS)
+   ============================================ */
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* Icon bo tròn F8 style */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.icon-indigo,
+.icon-primary {
+  background: var(--f8-primary-light);
+  color: var(--f8-primary);
+}
+
+.stat-title {
+  font-size: 15px;
+  color: var(--f8-text-muted);
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--f8-text-main);
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+/* ============================================
+   NHÃN TRẠNG THÁI (BADGES)
+   ============================================ */
+.trend-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.badge-emerald {
+  background: var(--f8-success-light);
+  color: var(--f8-success);
+}
+
+.badge-amber {
+  background: var(--f8-warning-light);
+  color: var(--f8-warning);
+}
+
+.badge-rose {
+  background: var(--f8-danger-light);
+  color: var(--f8-danger);
+}
+
+/* ============================================
+   BẢNG DỮ LIỆU (TABLES)
+   ============================================ */
+.table-container {
+  overflow-x: auto;
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--f8-border);
+}
+
+.data-table th {
+  color: var(--f8-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table tbody tr {
+  transition: background 0.2s;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--f8-primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--f8-primary);
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--f8-text-main);
+}
+
+/* ============================================
+   THAO TÁC NHANH (QUICK ACTIONS)
+   ============================================ */
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--f8-border);
+  border-radius: 16px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.action-item:hover {
+  border-color: var(--f8-primary);
+  background: var(--f8-primary-light);
+  transform: translateX(4px);
+  /* Hiệu ứng lướt sang phải */
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 50%;
+  border: 1px solid var(--f8-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.action-title {
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: var(--f8-text-main);
+  font-size: 15px;
+}
+
+.action-desc {
+  font-size: 13px;
+  color: var(--f8-text-muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ============================================
+   TRẠNG THÁI LOADING & LỖI
+   ============================================ */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60vh;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--f8-border);
+  border-top-color: var(--f8-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 256px;
+  background-color: var(--f8-danger-light);
+  border: 2px dashed var(--f8-danger);
+  border-radius: 16px;
+  color: var(--f8-danger);
+  text-align: center;
+  padding: 24px;
+}
+
+/* ============================================
+   MODAL (POP-UP)
+   ============================================ */
+.modal-backdrop {
   position: fixed;
-  left: 0;
   top: 0;
-  width: 260px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+}
+
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  font-size: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.badge-student {
+  background: var(--f8-success-light);
+  color: var(--f8-success);
+}
+.badge-teacher {
+  background: var(--f8-warning-light);
+  color: var(--f8-warning);
+}
+.badge-admin {
+  background: var(--f8-danger-light);
+  color: var(--f8-danger);
+}
+
+.error-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+/* ============================================
+   RESPONSIVE (TƯƠNG THÍCH DI ĐỘNG)
+   ============================================ */
+@media (max-width: 1024px) {
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header {
+    grid-column: 1;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-container {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hidden-sm {
+    display: none;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   SIDEBAR & LAYOUT CẤU TRÚC (F8 STYLE)
+   ============================================ */
+.dashboard-sidebar {
+  background: white;
+  border-right: 1px solid var(--f8-border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
   height: 100vh;
-  overflow-y: auto;
   z-index: 100;
-  animation: slideInLeft 0.6s var(--ease);
 }
 
 .sidebar-logo {
-  padding: 0 20px 32px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 24px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--f8-border);
 }
 
-.sidebar-logo img {
-  height: 40px;
-  width: auto;
+.sidebar-logo h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--f8-text-main);
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--f8-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 24px 16px;
+  overflow-y: auto;
 }
 
 .sidebar-menu {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.sidebar-item {
-  margin: 0;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
-  color: #cbd5e1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--f8-text-muted);
   text-decoration: none;
-  font-weight: 500;
-  transition: all var(--trans) var(--ease);
-  border-left: 3px solid transparent;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
-.sidebar-link:hover,
+.sidebar-link:hover {
+  background: var(--f8-bg-body);
+  color: var(--f8-text-main);
+}
+
 .sidebar-link.active {
-  background: rgba(0, 102, 255, 0.1);
-  color: var(--primary);
-  border-left-color: var(--primary);
+  background: var(--f8-primary-light);
+  color: var(--f8-primary);
 }
 
-.sidebar-icon {
-  font-size: 20px;
-  min-width: 24px;
+.sidebar-footer {
+  padding: 24px 16px;
+  border-top: 1px solid var(--f8-border);
+}
+
+.user-info-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 8px;
+}
+
+.user-details p {
+  margin: 0;
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--f8-text-muted);
+}
+
+.btn-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--f8-danger-light);
+  color: var(--f8-danger);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-logout:hover {
+  background: #fecdd3;
 }
 
 /* ============================================
-   DASHBOARD HEADER
+   HEADER CỦA LAYOUT (THANH TÌM KIẾM TÔNG F8)
    ============================================ */
+.dashboard-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
 
 .dashboard-header {
-  grid-column: 2;
-  background: var(--surface);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  padding: 20px 32px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  box-shadow: var(--shadow-2);
+  align-items: center;
+  padding: 16px 32px;
+  background: white;
+  border-bottom: 1px solid var(--f8-border);
   position: sticky;
   top: 0;
   z-index: 50;
 }
 
-.header-title {
-  font-size: var(--fs-xl);
-  font-weight: 700;
-  color: var(--text);
-  margin: 0;
-}
-
-.header-actions {
+.header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
 }
 
-.user-menu {
+.search-bar {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: var(--pill-radius);
-  background: var(--bg);
 }
 
-.user-avatar {
-  width: 36px;
-  height: 36px;
+.search-bar input {
+  padding: 10px 16px 10px 40px;
+  border-radius: 999px;
+  border: 1px solid var(--f8-border);
+  background: var(--f8-bg-body);
+  outline: none;
+  width: 250px;
+  transition: all 0.2s;
+}
+
+.search-bar input:focus {
+  background: white;
+  border-color: var(--f8-primary);
+  box-shadow: 0 0 0 3px var(--f8-primary-light);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--f8-text-muted);
+}
+
+.notification-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: var(--f8-danger);
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
+  border: 2px solid white;
 }
 
-.user-name {
-  font-weight: 600;
-  font-size: var(--fs-sm);
-  color: var(--text);
-}
-
-/* ============================================
-   DASHBOARD MAIN CONTENT
-   ============================================ */
-
+/* Fix lỗi tràn viền do padding cũ */
 .dashboard-main {
-  grid-column: 2;
-  padding: 32px;
-  max-width: 1400px;
-  width: 100%;
-}
-
-.main-title {
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0 0 8px 0;
-  color: var(--text);
-}
-
-.main-subtitle {
-  color: var(--muted);
-  margin: 0 0 32px 0;
-  font-size: var(--fs-base);
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* ============================================
-   DASHBOARD CARDS & WIDGETS
+   BỘ BIỂU MẪU (FORMS - F8 STYLE)
    ============================================ */
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-.widget-card {
-  background: var(--surface);
-  border-radius: var(--card-radius);
-  padding: 24px;
-  box-shadow: var(--shadow-1);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  transition: all var(--trans) var(--ease);
-}
-
-.widget-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 102, 255, 0.15);
-}
-
-.widget-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.widget-title {
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  color: var(--text);
-}
-
-.widget-icon {
-  font-size: 32px;
-}
-
-.widget-value {
-  font-size: 28px;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 12px 0;
-}
-
-.widget-meta {
-  color: var(--muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-
-/* ============================================
-   TABLES
-   ============================================ */
-
-.table-container {
-  background: var(--surface);
-  border-radius: var(--card-radius);
-  overflow: hidden;
-  box-shadow: var(--shadow-1);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  margin-top: 24px;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-.dashboard-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.dashboard-table thead {
-  background: var(--bg);
-  border-bottom: 2px solid rgba(15, 23, 42, 0.1);
-}
-
-.dashboard-table th {
-  padding: 16px;
-  text-align: left;
-  font-weight: 700;
-  color: var(--text);
-  font-size: var(--fs-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.dashboard-table td {
-  padding: 16px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  color: var(--muted);
-  font-size: var(--fs-sm);
-}
-
-.dashboard-table tbody tr:hover {
-  background: var(--bg);
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--pill-radius);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.status-active {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
-}
-
-.status-inactive {
-  background: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
-}
-
-.status-pending {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-/* ============================================
-   FORM SECTION
-   ============================================ */
-
-.form-section {
-  background: var(--surface);
-  border-radius: var(--card-radius);
-  padding: 32px;
-  box-shadow: var(--shadow-1);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  margin-top: 32px;
-}
-
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .form-label {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
-  color: var(--text);
+  color: var(--f8-text-main);
+  font-size: 14px;
 }
 
-.form-input,
-.form-textarea,
-.form-select {
+.form-input, .form-textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-base);
+  border: 1px solid var(--f8-border);
+  border-radius: 8px;
+  font-size: 15px;
   font-family: inherit;
-  transition: all var(--trans) var(--ease);
+  background-color: white;
+  transition: all 0.2s;
   box-sizing: border-box;
 }
 
-.form-input:focus,
-.form-textarea:focus,
-.form-select:focus {
+.form-input:focus, .form-textarea:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+  border-color: var(--f8-primary);
+  box-shadow: 0 0 0 3px var(--f8-primary-light);
 }
 
 .form-textarea {
@@ -343,78 +824,12 @@
   min-height: 120px;
 }
 
-.form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 32px;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
-
-/* ============================================
-   EMPTY STATE
-   ============================================ */
-
-.empty-state {
-  text-align: center;
-  padding: 60px 32px;
-  color: var(--muted);
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.empty-title {
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  color: var(--text);
-  margin: 0 0 8px 0;
-}
-
-.empty-description {
-  margin: 0 0 24px 0;
-  font-size: var(--fs-base);
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
 
 @media (max-width: 768px) {
-  .dashboard-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-sidebar {
-    position: fixed;
-    left: -260px;
-    width: 260px;
-    height: 100vh;
-    transition: left var(--trans) var(--ease);
-    z-index: 200;
-  }
-
-  .dashboard-sidebar.open {
-    left: 0;
-  }
-
-  .dashboard-header {
-    grid-column: 1;
-  }
-
-  .dashboard-main {
-    grid-column: 1;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .form-actions button {
-    width: 100%;
-  }
+  .form-row { grid-template-columns: 1fr; }
 }

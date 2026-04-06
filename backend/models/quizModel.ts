@@ -87,3 +87,14 @@ export const findQuizByLessonId = async (lessonId: number) => {
   quiz.questions = questions;
   return quiz;
 };
+
+export const getUserQuizStatus = async (userId: number, lessonId: number) => {
+  const [rows]: any = await db.execute(`
+    SELECT MAX(uqr.score) as highest_score
+    FROM user_quiz_results uqr
+    JOIN quizzes q ON uqr.quiz_id = q.id
+    WHERE uqr.user_id = ? AND q.lesson_id = ?
+  `, [userId, lessonId]);
+  
+  return rows[0]?.highest_score ?? null;
+};

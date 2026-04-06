@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { findQuizById, findCorrectAnswers, saveQuizResult, findQuizByLessonId } from '../models/quizModel';
+import { findQuizById, findCorrectAnswers, saveQuizResult, findQuizByLessonId, getUserQuizStatus } from '../models/quizModel';
 
 // Extend Express Request type to include user
 interface AuthRequest extends Request {
@@ -83,6 +83,33 @@ export const submitQuiz = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('Error submitting quiz:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const checkQuizStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const lessonId = parseInt(req.params.lessonId as string, 10);
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    const PASSING_SCORE_THRESHOLD = 50; 
+
+    const highestScore = await getUserQuizStatus(userId, lessonId);
+    
+    // Giả sử điểm >= 50 là qua môn (bạn có thể đổi thành 80 tùy logic dự án)
+    const isPassed = highestScore !== null && highestScore >= PASSING_SCORE_THRESHOLD;
+
+    res.status(200).json({
+      hasAttempted: highestScore !== null,
+      highestScore: highestScore,
+      isPassed: isPassed
+    });
+  } catch (error) {
+    console.error('Error checking quiz status:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
