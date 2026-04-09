@@ -28,8 +28,13 @@ import TeacherCourseForm from "./pages/TeacherCourseForm.tsx";
 import AdminCourses from "./pages/AdminCourses.tsx";
 import TeacherCourseStudents from "./pages/TeacherCourseStudents.tsx";
 import TeacherStudents from "./pages/TeacherStudents.tsx";
+import AdminCourseForm from "./pages/AdminCourseForm.tsx";
 import TeacherQuizzes from "./pages/TeacherQuizzes.tsx";
 import TeacherQuizEditor from "./pages/TeacherQuizEditor.tsx";
+import Settings from "./pages/Settings.tsx";
+import AdminUsers from "./pages/AdminUsers.tsx";
+import AdminCategories from "./pages/AdminCategories.tsx";
+import AdminTransactions from "./pages/AdminTransactions.tsx";
 
 
 function App() {
@@ -40,7 +45,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/course/:id" element={<CourseDetail />} />
-        
+        <Route path="/settings" element={<Settings /> } />
         {/* Protected Student Routes */}
         <Route element={<ProtectedRoute allowedRoles={['student', 'teacher', 'admin']} />}>
           <Route path="/courses/:id/learn" element={<CourseLearningPage />} />
@@ -70,7 +75,12 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/courses" element={<AdminCourses />} />
-            {/* Add more admin routes here later */}
+            <Route path="/admin/courses/new" element={<AdminCourseForm />} />
+            <Route path="/admin/courses/edit/:id" element={<AdminCourseForm />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/transactions" element={<AdminTransactions />} />
+            
           </Route>
         </Route>
 

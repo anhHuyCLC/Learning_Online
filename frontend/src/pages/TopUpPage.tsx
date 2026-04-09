@@ -36,8 +36,13 @@ const TopUpPage: React.FC = () => {
     const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/,/g, '');
         if (/^\d*$/.test(value)) {
-            setCustomAmount(Number(value).toLocaleString('en-US'));
-            setAmount(0); // Bỏ chọn các nút có sẵn
+            if (value === '') {
+                setCustomAmount('');
+                setAmount(0);
+            } else {
+                setCustomAmount(Number(value).toLocaleString('en-US'));
+                setAmount(0);
+            }
         }
     };
 
@@ -88,10 +93,6 @@ const TopUpPage: React.FC = () => {
                     </button>
                 </div>
             </div>
-            <style>{`
-                .preset-amounts { display: flex; gap: 10px; flex-wrap: wrap; }
-                .preset-amounts .btn-secondary.active { background-color: var(--f8-primary); color: white; border-color: var(--f8-primary); }
-            `}</style>
         </div>
     );
 };

@@ -312,7 +312,7 @@ export default function Home() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2026 Nền Tảng Học Tập. Bảo lưu mọi quyền.</p>
+          <p>&copy; {new Date().getFullYear()} Nền Tảng Học Tập. Bảo lưu mọi quyền.</p>
         </div>
       </footer>
     </div>

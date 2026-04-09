@@ -70,13 +70,13 @@ const AdminLayout = () => {
             <h1 className="heading-2">System Dashboard</h1>
           </div>
           <div className="header-right">
-            <div className="search-bar">
+            {/* <div className="search-bar">
               <span className="search-icon">🔍</span>
               <input type="text" placeholder="Search users, courses..." />
             </div>
             <button className="notification-btn">
               🔔<span className="notification-dot"></span>
-            </button>
+            </button> */}
           </div>
         </header>
         

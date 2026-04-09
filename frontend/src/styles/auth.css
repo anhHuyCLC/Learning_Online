@@ -189,6 +189,7 @@
   transition: all var(--trans) var(--ease);
   box-sizing: border-box;
   background: var(--bg);
+  color: black;
 }
 
 .form-input:focus {

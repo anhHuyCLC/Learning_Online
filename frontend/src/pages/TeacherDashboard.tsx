@@ -84,8 +84,7 @@ const TeacherDashboard = () => {
                                                 <img 
                                                     src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${course.name.charAt(0)}`} 
                                                     alt={course.name} 
-                                                    className="avatar" 
-                                                    style={{ borderRadius: '8px', objectFit: 'cover' }} 
+                                                    className="course-thumbnail-sm" 
                                                 />
                                                 <span className="user-name">{course.name}</span>
                                             </div>

@@ -4,10 +4,8 @@ import { getTeacherDashboard, getMyCourseStudents, getMyCourseStatistics } from 
 
 const router = express.Router();
 
-// Tất cả các route trong file này đều yêu cầu đăng nhập
 router.use(authMiddleware);
 
-// Các route này gọi đến các hàm trong teacherController đã tạo ở bước trước
 router.get('/dashboard', getTeacherDashboard);
 router.get('/courses/:courseId/students', getMyCourseStudents);
 router.get('/courses/:courseId/statistics', getMyCourseStatistics);

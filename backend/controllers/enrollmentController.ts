@@ -9,6 +9,7 @@ import {
     getCourseEnrollmentCount,
     getAllEnrollments,
 } from "../models/enrollmentModel";
+import connectDB from '../config/db';
 import Progress from "../models/lessonProgressModel";
 
 // Get student's enrolled courses
@@ -115,13 +116,52 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
             }
         }
 
-        const result = await createEnrollment(userId, courseId);
-        
-        res.status(201).json({
-            success: true,
-            message: "Đăng ký khóa học thành công",
-            enrollmentId: result.insertId
-        });
+        // Bắt đầu logic thanh toán cho khóa học mới
+        const connection: any = await connectDB();
+        try {
+            await connection.beginTransaction();
+
+            // Lấy giá khóa học
+            const [courseRows]: any = await connection.execute("SELECT price FROM courses WHERE id = ?", [courseId]);
+            const coursePrice = courseRows.length > 0 ? (parseFloat(courseRows[0].price) || 0) : 0;
+
+            if (coursePrice > 0) {
+                // Lấy số dư hiện tại của user (Sử dụng FOR UPDATE để khóa dòng, tránh race condition)
+                const [userRows]: any = await connection.execute("SELECT balance FROM users WHERE id = ? FOR UPDATE", [userId]);
+                const currentBalance = userRows.length > 0 ? (parseFloat(userRows[0].balance) || 0) : 0;
+
+                // Kiểm tra số dư
+                if (currentBalance < coursePrice) {
+                    await connection.rollback();
+                    res.status(400).json({
+                        success: false,
+                        message: "INSUFFICIENT_BALANCE"
+                    });
+                    return;
+                }
+
+                // Trừ tiền user
+                await connection.execute("UPDATE users SET balance = balance - ? WHERE id = ?", [coursePrice, userId]);
+
+                // Lưu lịch sử giao dịch
+                await connection.execute(
+                    "INSERT INTO transactions (user_id, amount, type, status) VALUES (?, ?, 'course_purchase', 'completed')",
+                    [userId, coursePrice]
+                );
+            }
+
+            const result = await createEnrollment(userId, courseId);
+            await connection.commit();
+            
+            res.status(201).json({
+                success: true,
+                message: "Đăng ký khóa học thành công",
+                enrollmentId: result.insertId
+            });
+        } catch (dbError) {
+            await connection.rollback();
+            throw dbError;
+        }
     } catch (error) {
         console.error("Enroll error:", error);
         res.status(500).json({
@@ -261,4 +301,3 @@ export const getAllEnrollmentsAdmin = async (req: any, res: any): Promise<void> 
         });
     }
 };
-

@@ -69,7 +69,7 @@ export default function TeacherQuizzes() {
             onChange={(e) => setSelectedCourseId(Number(e.target.value))}
           >
             {courses.map(course => (
-              <option key={course.id} value={course.id}>{course.name}</option>
+              <option key={course.id} value={course.id}>{course.title}</option>
             ))}
           </select>
         </div>

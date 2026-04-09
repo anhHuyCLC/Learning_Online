@@ -95,7 +95,7 @@ export default function TeacherCourses() {
                         <img 
                           src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : "https://via.placeholder.com/150"} 
                           alt={course.name} 
-                          style={{ width: '80px', height: '45px', objectFit: 'cover', borderRadius: '4px' }}
+                          className="course-thumbnail-md"
                         />
                         <div>
                           <div className="user-name">{course.title || course.name}</div>
@@ -113,8 +113,7 @@ export default function TeacherCourses() {
                           ✏️ Sửa
                         </Link>
                         <button 
-                          onClick={() => handleDelete(course.id, course.title || course.name)} 
-                          className="btn-secondary" 
+                          onClick={() => handleDelete(course.id, course.title || course.name)}
                           style={{ padding: '6px 12px', fontSize: '13px', color: 'var(--f8-danger)' }}
                         >
                           🗑️ Xóa

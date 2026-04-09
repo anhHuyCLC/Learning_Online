@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { getTeacherQuizByLesson, saveTeacherQuiz } from "../services/quizService";
 import "../styles/dashboard.css";
 
 type Option = {
@@ -28,8 +29,6 @@ export default function TeacherQuizEditor() {
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
-
   const [quiz, setQuiz] = useState<Quiz>({
     title: "",
     lesson_id: Number(lessonId),
@@ -39,18 +38,14 @@ export default function TeacherQuizEditor() {
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const token = localStorage.getItem("token");
-        // Thay đổi URL theo API thực tế backend của bạn để lấy Quiz của bài học
-        const response = await fetch(`${API_URL}/api/quizzes/lesson/${lessonId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Nếu backend trả về dữ liệu quiz
-          if (data && (data.id || data.quiz)) {
-            setQuiz(data.quiz || data);
-          }
+        const data = await getTeacherQuizByLesson(lessonId!);
+        // Nếu backend trả về dữ liệu quiz
+        if (data && (data.id || data.quiz)) {
+          const fetchedQuiz = data.quiz || data;
+          setQuiz({
+            ...fetchedQuiz,
+            questions: fetchedQuiz.questions || [] // Đảm bảo luôn là mảng
+          });
         }
       } catch (err: any) {
         console.error("Lỗi tải quiz", err);
@@ -65,7 +60,7 @@ export default function TeacherQuizEditor() {
     setQuiz((prev) => ({
       ...prev,
       questions: [
-        ...prev.questions,
+        ...(prev.questions || []),
         {
           content: "",
           options: [
@@ -79,7 +74,7 @@ export default function TeacherQuizEditor() {
 
   const handleRemoveQuestion = (qIndex: number) => {
     setQuiz((prev) => {
-      const newQuestions = [...prev.questions];
+      const newQuestions = [...(prev.questions || [])];
       newQuestions.splice(qIndex, 1);
       return { ...prev, questions: newQuestions };
     });
@@ -87,43 +82,65 @@ export default function TeacherQuizEditor() {
 
   const handleQuestionChange = (qIndex: number, value: string) => {
     setQuiz((prev) => {
-      const newQuestions = [...prev.questions];
-      newQuestions[qIndex].content = value;
+      const newQuestions = (prev.questions || []).map((q, i) => 
+        i === qIndex ? { ...q, content: value } : q
+      );
       return { ...prev, questions: newQuestions };
     });
   };
 
   const handleAddOption = (qIndex: number) => {
     setQuiz((prev) => {
-      const newQuestions = [...prev.questions];
-      newQuestions[qIndex].options.push({ content: "", is_correct: false });
+      const newQuestions = (prev.questions || []).map((q, i) => 
+        i === qIndex ? { ...q, options: [...(q.options || []), { content: "", is_correct: false }] } : q
+      );
       return { ...prev, questions: newQuestions };
     });
   };
 
   const handleRemoveOption = (qIndex: number, oIndex: number) => {
     setQuiz((prev) => {
-      const newQuestions = [...prev.questions];
-      newQuestions[qIndex].options.splice(oIndex, 1);
+      const newQuestions = (prev.questions || []).map((q, i) => {
+        if (i === qIndex) {
+          const newOptions = [...(q.options || [])];
+          newOptions.splice(oIndex, 1);
+          return { ...q, options: newOptions };
+        }
+        return q;
+      });
       return { ...prev, questions: newQuestions };
     });
   };
 
   const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
     setQuiz((prev) => {
-      const newQuestions = [...prev.questions];
-      newQuestions[qIndex].options[oIndex].content = value;
+      const newQuestions = (prev.questions || []).map((q, i) => {
+        if (i === qIndex) {
+          const newOptions = (q.options || []).map((opt, idx) => 
+            idx === oIndex ? { ...opt, content: value } : opt
+          );
+          return { ...q, options: newOptions };
+        }
+        return q;
+      });
       return { ...prev, questions: newQuestions };
     });
   };
 
   const handleSetCorrectOption = (qIndex: number, oIndex: number) => {
     setQuiz((prev) => {
-      const newQuestions = [...prev.questions];
-      newQuestions[qIndex].options = newQuestions[qIndex].options.map((opt, idx) => ({
-        ...opt,
-        is_correct: idx === oIndex,
-      }));
+      const newQuestions = (prev.questions || []).map((q, i) => {
+        if (i === qIndex) {
+          return {
+            ...q,
+            options: (q.options || []).map((opt, idx) => ({
+              ...opt,
+              is_correct: idx === oIndex,
+            }))
+          };
+        }
+        return q;
+      });
       return { ...prev, questions: newQuestions };
     });
   };
@@ -132,24 +149,7 @@ export default function TeacherQuizEditor() {
     setSaving(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      // Thay đổi URL POST/PUT theo endpoint backend của bạn
-      const endpoint = quiz.id 
-        ? `${API_URL}/api/quizzes/${quiz.id}` 
-        : `${API_URL}/api/quizzes`;
-      
-      const response = await fetch(endpoint, {
-        method: quiz.id ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(quiz),
-      });
-
-      if (!response.ok) {
-        throw new Error("Không thể lưu Quiz. Vui lòng kiểm tra lại hệ thống.");
-      }
+      await saveTeacherQuiz(quiz);
 
       alert("Lưu Quiz thành công!");
       navigate("/teacher/quizzes");
@@ -191,7 +191,7 @@ export default function TeacherQuizEditor() {
         </div>
       </div>
 
-      {quiz.questions.map((question, qIndex) => (
+      {(quiz.questions || []).map((question, qIndex) => (
         <div key={qIndex} className="card mb-4">
           <div className="card-header" style={{ padding: '16px 24px', marginBottom: 0 }}>
             <h3 className="heading-2">Câu hỏi {qIndex + 1}</h3>
@@ -215,7 +215,7 @@ export default function TeacherQuizEditor() {
               />
             </div>
             <label className="form-label">Các lựa chọn trả lời</label>
-            {question.options.map((option, oIndex) => (
+            {(question.options || []).map((option, oIndex) => (
               <div key={oIndex} className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <input
                   type="radio"

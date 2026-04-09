@@ -1,8 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import * as authService from '../services/authService'; // Import authService
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import * as authService from '../services/authService';
+import apiClient from '../services/apiClient';
 
 // Định nghĩa interface cho User. Đảm bảo có thuộc tính 'balance'.
 interface User {
@@ -27,6 +26,14 @@ interface RegisterData {
   email: string;
   password: string;
 }
+
+// Định nghĩa interface cho dữ liệu cập nhật
+interface UpdateProfileData {
+  name: string;
+  currentPassword?: string;
+  password?: string;
+}
+
 // Định nghĩa interface cho trạng thái xác thực
 interface AuthState {
   user: User | null;
@@ -83,27 +90,15 @@ export const topUpBalance = createAsyncThunk(
   'auth/topUpBalance',
   async (amount: number, { rejectWithValue, getState }) => {
     try {
-      // Lấy token từ trạng thái Redux để gửi kèm trong header xác thực
       const state = getState() as { auth: AuthState };
-      const token = state.auth.token;
       const currentUser = state.auth.user; // Lấy thông tin user hiện tại
 
-      if (!token || !currentUser) { // Thêm kiểm tra currentUser
-        return rejectWithValue('Không có thông tin người dùng hoặc token xác thực. Vui lòng đăng nhập lại.');
+      if (!currentUser) { 
+        return rejectWithValue('Không có thông tin người dùng. Vui lòng đăng nhập lại.');
       }
 
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
-      // Gửi yêu cầu POST đến API nạp tiền
-      const response = await axios.post(`${API_URL}/api/users/top-up`, { amount }, config);
-      
-      // Cập nhật thông tin người dùng trong localStorage với số dư mới
-      // Sử dụng currentUser đã kiểm tra null
+      const response = await apiClient.post('/users/top-up', { amount });
+    
       const updatedUser = { ...currentUser, balance: response.data.newBalance };
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
@@ -112,6 +107,33 @@ export const topUpBalance = createAsyncThunk(
       if (axios.isAxiosError(error) && error.response) {
         // Trả về thông báo lỗi từ backend nếu có
         return rejectWithValue(error.response.data.message || 'Lỗi khi nạp tiền.');
+      }
+      return rejectWithValue(error.message || 'Lỗi mạng.');
+    }
+  }
+);
+
+// Thunk để cập nhật thông tin người dùng
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (profileData: UpdateProfileData, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as { auth: AuthState };
+      const currentUser = state.auth.user;
+
+      if (!currentUser) {
+        return rejectWithValue('Không có thông tin người dùng. Vui lòng đăng nhập lại.');
+      }
+
+      const response = await apiClient.put('/users/update-user', profileData);
+     
+      const updatedUser = { ...currentUser, name: profileData.name };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      return { ...response.data, user: updatedUser };
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response) {
+        return rejectWithValue(error.response.data.message || 'Lỗi khi cập nhật thông tin.');
       }
       return rejectWithValue(error.message || 'Lỗi mạng.');
     }
@@ -134,8 +156,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // --- Các extraReducers hiện có cho loginUser, registerUser sẽ ở đây ---
-      // Xử lý loginUser thunk
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -164,7 +184,18 @@ const authSlice = createSlice({
         if (state.user) { state.user.balance = action.payload.newBalance; }
         state.error = null;
       })
-      .addCase(topUpBalance.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; });
+      .addCase(topUpBalance.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; })
+      
+      // Xử lý updateUserProfile thunk
+      .addCase(updateUserProfile.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.user) { 
+          state.user.name = action.payload.user.name; 
+        }
+        state.error = null;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; });
   },
 });
 

@@ -110,12 +110,12 @@ const StudentEnrollments: React.FC = () => {
                                     <div className="progress-section">
                                         <div className="progress-header">
                                             <span>Tiến độ học tập</span>
-                                            <span className="progress-percent">{enrollment.progress}%</span>
+                                            <span className="progress-percent">{Math.round(Number(enrollment.progress) || 0)}%</span>
                                         </div>
                                         <div className="progress-bar">
                                             <div
                                                 className="progress-fill"
-                                                style={{ width: `${enrollment.progress}%` }}
+                                                style={{ width: `${Math.round(Number(enrollment.progress) || 0)}%` }}
                                             ></div>
                                         </div>
                                     </div>

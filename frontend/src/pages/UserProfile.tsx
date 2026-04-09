@@ -72,6 +72,14 @@ const UserProfile: React.FC = () => {
                       : "Học viên"}
                 </span>
               </div>
+              <div className="user-balance" style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--f8-primary)' }}>
+                  Số dư: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(user.balance || 0)}
+                </span>
+                <button className="btn-secondary btn-sm" onClick={() => navigate("/top-up")}>
+                  Nạp tiền
+                </button>
+              </div>
             </div>
             <button
               className="btn-edit-profile"
@@ -147,9 +155,9 @@ const UserProfile: React.FC = () => {
                         <span className="meta-value">{enrollment.teacher_name}</span>
                       </div>
                       <div className="meta-item">
-                        <span className="meta-label">Tên bài học:</span>
+                        <span className="meta-label">Giá khóa học:</span>
                         <span className="meta-value">
-                          ${enrollment.course_price}
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(enrollment.course_price) || 0)}
                         </span>
                       </div>
                     </div>

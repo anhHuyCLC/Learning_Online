@@ -49,7 +49,11 @@ export default function CourseDetail() {
                 dispatch(checkEnrollment(courseId));
             }, 300);
         } catch (err: any) {
-            setEnrollError(err || "Lỗi khi đăng ký khóa học");
+            if (err === "INSUFFICIENT_BALANCE") {
+                setEnrollError("Số dư của bạn không đủ để đăng ký khóa học này.");
+            } else {
+                setEnrollError(err || "Lỗi khi đăng ký khóa học");
+            }
         }
     };
 
@@ -143,7 +147,7 @@ export default function CourseDetail() {
                         <div className="meta-item">
                             <span className="meta-label">Price:</span>
                             <span className="meta-price">
-                                {Number(course.price).toFixed(0)} VNĐ
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}
                             </span>
                         </div>
                     </div>
@@ -154,8 +158,17 @@ export default function CourseDetail() {
                     </div>
 
                     {enrollError && (
-                        <div className="enrollment-error">
+                        <div className="enrollment-error" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <p>{enrollError}</p>
+                            {enrollError.includes("Số dư") && (
+                                <button 
+                                    className="btn-primary" 
+                                    onClick={() => navigate('/top-up')}
+                                    style={{ alignSelf: 'flex-start', padding: '6px 12px', fontSize: '13px' }}
+                                >
+                                    Nạp tiền ngay
+                                </button>
+                            )}
                         </div>
                     )}
 

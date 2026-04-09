@@ -33,6 +33,24 @@
 }
 
 /* ============================================
+   TÙY CHỈNH THANH CUỘN (SCROLLBAR)
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ============================================
    BỘ KHUNG GIAO DIỆN (LAYOUT & CONTAINER)
    ============================================ */
 .dashboard-container {
@@ -139,6 +157,10 @@
   transition: all 0.2s ease;
 }
 
+.btn-primary:active, .btn-secondary:active, .btn-danger:active {
+  transform: translateY(1px);
+}
+
 .btn-primary {
   background-color: var(--f8-primary);
   color: white;
@@ -190,7 +212,7 @@
 }
 
 .btn-text:hover {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* ============================================
@@ -221,9 +243,9 @@
 .stat-card {
   background: var(--f8-bg-card);
   border-radius: 16px;
-  border: 1px solid var(--f8-border);
+  border: 1px solid rgba(0, 0, 0, 0.04);
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   /* Bóng đổ nhẹ */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -231,7 +253,7 @@
 .card:hover,
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
 .card-header {
@@ -352,6 +374,7 @@
   padding: 16px;
   text-align: left;
   border-bottom: 1px solid var(--f8-border);
+  vertical-align: middle;
 }
 
 .data-table th {
@@ -360,6 +383,7 @@
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  background-color: #fafafa;
 }
 
 .data-table tbody tr {
@@ -515,6 +539,12 @@
   width: 100%;
   max-width: 480px;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+  
+  /* Khắc phục xung đột làm ẩn Modal từ các thư viện ngoài (vd: Bootstrap) */
+  display: block !important;
+  position: relative !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .modal h3 {
@@ -655,11 +685,25 @@
 .sidebar-link:hover {
   background: var(--f8-bg-body);
   color: var(--f8-text-main);
+  text-decoration: none;
 }
 
 .sidebar-link.active {
   background: var(--f8-primary-light);
   color: var(--f8-primary);
+  position: relative;
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: var(--f8-primary);
+  border-radius: 0 4px 4px 0;
 }
 
 .sidebar-footer {
@@ -784,6 +828,12 @@
   padding: 0;
   flex: 1;
   overflow-y: auto;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================
@@ -808,15 +858,21 @@
   border-radius: 8px;
   font-size: 15px;
   font-family: inherit;
-  background-color: white;
+  background-color: #ffffff !important;
+  color: var(--f8-text-main) !important; 
   transition: all 0.2s;
   box-sizing: border-box;
+}
+
+.form-input option {
+  color: var(--f8-text-main);
+  background-color: #ffffff;
 }
 
 .form-input:focus, .form-textarea:focus {
   outline: none;
   border-color: var(--f8-primary);
-  box-shadow: 0 0 0 3px var(--f8-primary-light);
+  box-shadow: 0 0 0 3px rgba(240, 81, 35, 0.15);
 }
 
 .form-textarea {
@@ -832,4 +888,58 @@
 
 @media (max-width: 768px) {
   .form-row { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   CÁC THÀNH PHẦN MỞ RỘNG & TIỆN ÍCH (UTILITIES)
+   ============================================ */
+
+/* Nạp tiền (TopUp) */
+.preset-amounts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.preset-amounts .btn-secondary.active {
+  background-color: var(--f8-primary);
+  color: white;
+  border-color: var(--f8-primary);
+}
+
+/* Container cho trang Cài đặt (Settings) */
+.settings-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-top: 20px;
+  background: transparent;
+}
+
+/* Thanh Tiến Độ mini (Mini Progress Bar) */
+.progress-track {
+  flex: 1;
+  height: 6px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill-success {
+  height: 100%;
+  background: var(--f8-success);
+  transition: width 0.3s ease;
+}
+
+/* Ảnh thu nhỏ Khóa học (Course Thumbnails) */
+.course-thumbnail-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--f8-primary-light);
+}
+.course-thumbnail-md {
+  width: 80px;
+  height: 45px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--f8-border);
 }

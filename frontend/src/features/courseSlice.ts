@@ -11,6 +11,7 @@ import type { Courses, Lesson } from "../type/coursesType";
 
 interface CourseState {
   courses: Courses[];
+  currentCourse: Courses | null;
   currentLesson: Lesson | null;
   loading: boolean;
   error: string | null;
@@ -18,6 +19,7 @@ interface CourseState {
 
 const initialState: CourseState = {
   courses: [],
+  currentCourse: null,
   currentLesson: null,
   loading: false,
   error: null,
@@ -30,7 +32,7 @@ export const getCourses = createAsyncThunk<
 >("courses/getCourses", async (_, { rejectWithValue }) => {
   try {
     const response = await fetchCourses();
-    return response.courses;
+    return response.data || response.courses || response;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to fetch courses");
   }
@@ -43,7 +45,7 @@ export const getAllCoursesAdmin = createAsyncThunk<
 >("courses/getAllCoursesAdmin", async (_, { rejectWithValue }) => {
   try {
     const response = await fetchAllCoursesAdmin();
-    return response.data;
+    return response.data || response.courses || response;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to fetch all courses");
   }
@@ -56,7 +58,7 @@ export const getCourseById = createAsyncThunk<
 >("courses/getCourseById", async (id: number, { rejectWithValue }) => {
   try {
     const response = await fetchCourseById(id);
-    return response.course;
+    return response.data || response.course || response;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to fetch course");
   }
@@ -69,7 +71,7 @@ export const getLessonById = createAsyncThunk<
 >("courses/getLessonById", async (id: number, { rejectWithValue }) => {
   try {
     const response = await fetchLessonById(id);
-    return response.lesson;
+    return response.data || response.lesson || response;
   } catch (error: any) {
     return rejectWithValue(error.message || "Failed to fetch lesson");
   }
@@ -82,7 +84,7 @@ export const createCourse = createAsyncThunk<
 >('courses/createCourse', async (courseData, { rejectWithValue }) => {
   try {
     const response = await createCourseService(courseData);
-    return response.course;
+    return response.data || response.course || response;
   } catch (error: any) {
     return rejectWithValue(error.message || 'Failed to create course');
   }
@@ -95,7 +97,7 @@ export const updateCourse = createAsyncThunk<
 >('courses/updateCourse', async ({ id, courseData }, { rejectWithValue }) => {
   try {
     const response = await updateCourseService(id, courseData);
-    return response.course;
+    return response.data || response.course || response;
   } catch (error: any) {
     return rejectWithValue(error.message || 'Failed to update course');
   }
@@ -156,6 +158,7 @@ const courseSlice = createSlice({
     .addCase(getCourseById.fulfilled, (state: CourseState, action: PayloadAction<Courses>) => {
       state.loading = false;
       state.courses = [action.payload];
+      state.currentCourse = action.payload;
     })
     .addCase(getCourseById.rejected, (state: CourseState, action) => {
       state.loading = false;
@@ -196,6 +199,9 @@ const courseSlice = createSlice({
       const index = state.courses.findIndex(c => c.id === action.payload.id);
       if (index !== -1) {
         state.courses[index] = action.payload;
+      }
+      if (state.currentCourse?.id === action.payload.id) {
+        state.currentCourse = action.payload;
       }
     })
     .addCase(updateCourse.rejected, (state, action) => {

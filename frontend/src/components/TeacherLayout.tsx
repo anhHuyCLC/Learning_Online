@@ -70,7 +70,7 @@ const TeacherLayout = () => {
           <div className="header-left">
             <h1 className="heading-2">Dashboard</h1>
           </div>
-          <div className="header-right">
+          {/* <div className="header-right">
             <div className="search-bar">
               <span className="search-icon">🔍</span>
               <input type="text" placeholder="Search..." />
@@ -78,7 +78,7 @@ const TeacherLayout = () => {
             <button className="notification-btn">
               🔔<span className="notification-dot"></span>
             </button>
-          </div>
+          </div> */}
         </header>
         
         <main className="dashboard-main">

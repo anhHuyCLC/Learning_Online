@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import teacherService from "../services/teacherService";
+import { fetchCoursesByTeacher, fetchCourseStudents } from "../services/courseService";
 import "../styles/dashboard.css";
+import { useAppSelector } from "../app/store";
 
 export default function TeacherStudents() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -8,11 +9,15 @@ export default function TeacherStudents() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const { enrollments } = useAppSelector(
+    (state) => state.enrollment
+  );
 
   useEffect(() => {
     const loadCourses = async () => {
       try {
-        const res = await teacherService.getMyCourses();
+        const res = await fetchCoursesByTeacher();
         const coursesData = res.courses || res.data || res;
         setCourses(coursesData);
         if (coursesData.length > 0) {
@@ -32,8 +37,8 @@ export default function TeacherStudents() {
       if (!selectedCourseId) return;
       setLoading(true);
       try {
-        const res = await teacherService.getCourseStudents(Number(selectedCourseId));
-        setStudents(res.data || []);
+        const res = await fetchCourseStudents(Number(selectedCourseId));
+        setStudents(res.data || res.students || res || []);
       } catch (err: any) {
         setError("Không thể tải danh sách học viên.");
       } finally {
@@ -42,6 +47,21 @@ export default function TeacherStudents() {
     };
     loadStudents();
   }, [selectedCourseId]);
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      active: "Đang học",
+      completed: "Hoàn thành",
+      cancelled: "Đã hủy",
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusClass = (status: string) => {
+    if (status === 'completed') return 'badge-emerald';
+    if (status === 'cancelled') return 'badge-rose';
+    return 'badge-amber'; // Mặc định cho active (Đang học)
+  };
 
   if (loading && courses.length === 0) {
     return <div className="loading-container"><div className="spinner"></div></div>;
@@ -67,7 +87,7 @@ export default function TeacherStudents() {
             onChange={(e) => setSelectedCourseId(Number(e.target.value))}
           >
             {courses.map(course => (
-              <option key={course.id} value={course.id}>{course.name}</option>
+              <option key={course.id} value={course.id}>{course.title || course.name}</option>
             ))}
           </select>
         </div>
@@ -89,26 +109,48 @@ export default function TeacherStudents() {
               ) : students.length === 0 ? (
                 <tr><td colSpan={5} className="text-center text-muted">Chưa có học viên nào đăng ký khóa học này.</td></tr>
               ) : (
-                students.map(student => (
-                  <tr key={student.id}>
-                    <td className="font-bold">{student.name}</td>
-                    <td className="text-muted">{student.email}</td>
-                    <td>{new Date(student.enrolled_at).toLocaleDateString("vi-VN")}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ flex: 1, height: '6px', background: '#e8e8e8', borderRadius: '3px', overflow: 'hidden' }}>
-                          <div style={{ width: `${student.progress}%`, height: '100%', background: 'var(--f8-success)' }}></div>
+                students.map(student => {
+                  let formattedProgress = 0;
+                  
+                  if (Array.isArray(enrollments)) {
+                   
+                    const studentEnrollment = enrollments.find(
+                      (e) => e.user_id === student.id && e.course_id === selectedCourseId
+                    );
+                    
+                    const currentProgress = studentEnrollment?.progress || 0;
+                    formattedProgress = Math.round(Number(currentProgress));
+                  }
+
+                  return (
+                    <tr key={student.id}>
+                      <td className="font-bold">{student.name}</td>
+                      <td className="text-muted">{student.email}</td>
+                      <td>{new Date(student.enrolled_at || Date.now()).toLocaleDateString("vi-VN")}</td>
+                      
+                      {/* CỘT TIẾN ĐỘ ĐÃ ĐƯỢC CẬP NHẬT */}
+                      <td style={{ minWidth: '200px' }}>
+                        <div className="progress-container" style={{ marginBottom: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px', fontWeight: 600 }}>
+                            <span className="text-muted">Tiến độ học tập</span>
+                            <span style={{ color: 'var(--f8-success)' }}>
+                              {formattedProgress}%
+                            </span>
+                          </div>
+                          <div className="progress-track" style={{ margin: 0 }}>
+                            <div className="progress-fill-success" style={{ width: `${formattedProgress}%` }}></div>
+                          </div>
                         </div>
-                        <span className="text-mono text-muted">{student.progress}%</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${student.status === 'completed' ? 'badge-emerald' : 'badge-amber'}`}>
-                        {student.status === 'completed' ? 'Hoàn thành' : 'Đang học'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      
+                      <td>
+                        <span className={`status-badge ${getStatusClass(student.status)}`}>
+                          {getStatusLabel(student.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
