@@ -4,13 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"vite\"",
-    "server": "tsx watch backend/app.ts",
-    "build": "tsc -b && vite build",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "server": "npm run dev:backend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
     "lint": "eslint .",
     "format:css": "prettier --write \"frontend/src/styles/**/*.css\"",
     "lint:css": "stylelint \"frontend/src/styles/**/*.css\" --fix",
-    "preview": "vite preview"
+    "preview": "npm --prefix frontend run preview"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",

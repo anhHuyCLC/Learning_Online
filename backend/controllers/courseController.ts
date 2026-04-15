@@ -64,12 +64,14 @@ export const getCourseById = async (req: any, res: any): Promise<void> => {
 
 export const createCourse = async (req: any, res: any): Promise<void> => {
     try {
-        const { name, description, price } = req.body;
+        const { name, title, description, price } = req.body;
         const teacherId = req.user.id;
         const userRole = req.user.role;
         const imagePath = req.file ? `/${req.file.path.replace(/\\/g, "/")}` : null;
-        
-        if (!name || !description) {
+        const normalizedTitle = title || name;
+        const normalizedName = name || title;
+
+        if (!normalizedName || !description) {
             res.status(400).json({
                 success: false,
                 message: "Vui lòng nhập đầy đủ thông tin"
@@ -83,15 +85,15 @@ export const createCourse = async (req: any, res: any): Promise<void> => {
                 message: "Chỉ giáo viên hoặc admin mới có thể tạo khóa học"
             });
         }
-        
+
         const db = await connectDB();
-        await db.execute(
-            "INSERT INTO courses (name, description, price, teacher_id, image, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
-            [name, description, price || 0, teacherId, imagePath]
+        const [insertResult]: any = await db.execute(
+            "INSERT INTO courses (name, title, description, price, teacher_id, image, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+            [normalizedName, normalizedTitle, description, price || 0, teacherId, imagePath]
         );
 
-        const [newCourse]: any = await db.execute("SELECT * FROM courses WHERE id = LAST_INSERT_ID()");
-        
+        const [newCourse]: any = await db.execute("SELECT * FROM courses WHERE id = ?", [insertResult.insertId]);
+
         res.status(201).json({
             success: true,
             message: "Tạo khóa học thành công",
@@ -109,7 +111,9 @@ export const createCourse = async (req: any, res: any): Promise<void> => {
 export const updateCourse = async (req: any, res: any): Promise<void> => {
     try {
         const { id } = req.params;
-        const { name, description, price } = req.body;
+        const { name, title, description, price } = req.body;
+        const normalizedTitle = title || name;
+        const normalizedName = name || title;
         const userId = req.user.id;
         const userRole = req.user.role;
         const imagePath = req.file ? `/${req.file.path.replace(/\\/g, "/")}` : null;
@@ -131,8 +135,8 @@ export const updateCourse = async (req: any, res: any): Promise<void> => {
         }
 
         // Build the query dynamically
-        let query = "UPDATE courses SET name = ?, description = ?, price = ?";
-        const params: (string | number | null)[] = [name, description, price];
+        let query = "UPDATE courses SET name = ?, title = ?, description = ?, price = ?";
+        const params: (string | number | null)[] = [normalizedName, normalizedTitle, description, price];
 
         if (imagePath) {
             query += ", image = ?";
@@ -147,7 +151,7 @@ export const updateCourse = async (req: any, res: any): Promise<void> => {
         res.status(200).json({
             success: true,
             message: "Cập nhật khóa học thành công",
-            course: { id, name, description, price, image: imagePath || course.image }
+            course: { id, name: normalizedName, title: normalizedTitle, description, price, image: imagePath || course.image }
         });
     } catch (error) {
         console.error("Update course error:", error);

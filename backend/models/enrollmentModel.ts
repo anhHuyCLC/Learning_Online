@@ -26,7 +26,7 @@ export const getUserEnrollments = async (userId: number) => {
             e.course_id,
             e.enrolled_at,
             c.id as course_id,
-            c.title as course_name,
+            COALESCE(c.title, c.name) as course_name,
             c.description as course_description,
             c.price as course_price,
             c.image as course_image,
@@ -70,10 +70,14 @@ export const getEnrollmentByUserAndCourse = async (userId: number, courseId: num
 };
 
 // Create enrollment
-export const createEnrollment = async (userId: number, courseId: number) => {
-    const [result]: any = await db.execute(
+export const createEnrollment = async (
+    userId: number,
+    courseId: number,
+    connection: { execute: (sql: string, params?: any[]) => Promise<any> } = db
+) => {
+    const [result]: any = await connection.execute(
         `INSERT INTO enrollments (user_id, course_id, enrolled_at, status) 
-        VALUES (?, ?, NOW(), 'active')`,
+        VALUES (?, ?, CURRENT_TIMESTAMP, 'active')`,
         [userId, courseId]
     );
     return result;
@@ -82,7 +86,7 @@ export const createEnrollment = async (userId: number, courseId: number) => {
 // Re-activate cancelled enrollment (for re-enrollment)
 export const reactivateEnrollment = async (userId: number, courseId: number) => {
     const [result]: any = await db.execute(
-        `UPDATE enrollments SET status = 'active', enrolled_at = NOW()
+        `UPDATE enrollments SET status = 'active', enrolled_at = CURRENT_TIMESTAMP
         WHERE user_id = ? AND course_id = ? AND status = 'cancelled'`,
         [userId, courseId]
     );
@@ -92,7 +96,7 @@ export const reactivateEnrollment = async (userId: number, courseId: number) => 
 // Re-enroll in a course
 export const reEnroll = async (userId: number, courseId: number) => {
     const [result]: any = await db.execute(
-        `UPDATE enrollments SET status = 'active', enrolled_at = NOW()
+        `UPDATE enrollments SET status = 'active', enrolled_at = CURRENT_TIMESTAMP
         WHERE user_id = ? AND course_id = ?`,
         [userId, courseId]
     );
@@ -146,7 +150,7 @@ export const getAllEnrollments = async () => {
             e.enrolled_at,
             u.name as user_name,
             u.email as user_email,
-            c.title as course_name,
+            COALESCE(c.title, c.name) as course_name,
             pcte.calculated_progress as progress,
             CASE
                 WHEN pcte.calculated_progress >= 100 THEN 'completed'

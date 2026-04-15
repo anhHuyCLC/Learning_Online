@@ -1,25 +1,17 @@
--- Create enrollments table for the Student Enrollment System
+-- Create enrollments table for SQLite
 CREATE TABLE IF NOT EXISTS enrollments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    course_id INT NOT NULL,
-    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    progress INT DEFAULT 0,
-    status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    course_id INTEGER NOT NULL,
+    enrolled_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    progress INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_enrollment (user_id, course_id),
-    INDEX idx_user_id (user_id),
-    INDEX idx_course_id (course_id),
-    INDEX idx_status (status),
-    INDEX idx_enrolled_at (enrolled_at)
+    UNIQUE (user_id, course_id)
 );
 
--- Add some sample data (optional)
--- Insert sample enrollments
-INSERT INTO enrollments (user_id, course_id, progress, status) 
-SELECT u.id, c.id, FLOOR(RAND() * 100), 'active'
-FROM users u
-CROSS JOIN courses c
-WHERE u.role = 'student'
-LIMIT 10;
+CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments(course_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_status ON enrollments(status);
+CREATE INDEX IF NOT EXISTS idx_enrollments_enrolled_at ON enrollments(enrolled_at);

@@ -6,12 +6,12 @@ const db = await connectDB();
 const Progress = {
   markAsCompleted: async (userId: number, lessonId: number) => {
     const sql = `
-      INSERT INTO progress (user_id, lesson_id, completed, completion_percentage, completed_at) 
-      VALUES (?, ?, 1, 100.00, NOW())
-      ON DUPLICATE KEY UPDATE 
-        completed = 1, 
-        completion_percentage = 100.00, 
-        completed_at = NOW()
+      INSERT INTO progress (user_id, lesson_id, completed, completion_percentage, completed_at)
+      VALUES (?, ?, 1, 100.00, CURRENT_TIMESTAMP)
+      ON CONFLICT(user_id, lesson_id) DO UPDATE SET
+        completed = 1,
+        completion_percentage = 100.00,
+        completed_at = CURRENT_TIMESTAMP
     `;
     try {
       const [result] = await db.execute(sql, [userId, lessonId]);
@@ -51,10 +51,11 @@ const Progress = {
 
   deleteProgressForCourse: async (userId: number, courseId: number) => {
     const sql = `
-      DELETE p 
-      FROM progress p
-      JOIN lessons l ON p.lesson_id = l.id
-      WHERE p.user_id = ? AND l.course_id = ?
+      DELETE FROM progress
+      WHERE user_id = ?
+        AND lesson_id IN (
+          SELECT id FROM lessons WHERE course_id = ?
+        )
     `;
     try {
       const [result] = await db.execute(sql, [userId, courseId]);

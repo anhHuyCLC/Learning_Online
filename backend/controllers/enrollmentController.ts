@@ -126,8 +126,8 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
             const coursePrice = courseRows.length > 0 ? (parseFloat(courseRows[0].price) || 0) : 0;
 
             if (coursePrice > 0) {
-                // Lấy số dư hiện tại của user (Sử dụng FOR UPDATE để khóa dòng, tránh race condition)
-                const [userRows]: any = await connection.execute("SELECT balance FROM users WHERE id = ? FOR UPDATE", [userId]);
+                // SQLite does not support FOR UPDATE; BEGIN IMMEDIATE already reserves write lock.
+                const [userRows]: any = await connection.execute("SELECT balance FROM users WHERE id = ?", [userId]);
                 const currentBalance = userRows.length > 0 ? (parseFloat(userRows[0].balance) || 0) : 0;
 
                 // Kiểm tra số dư
@@ -150,7 +150,7 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
                 );
             }
 
-            const result = await createEnrollment(userId, courseId);
+            const result = await createEnrollment(userId, courseId, connection);
             await connection.commit();
             
             res.status(201).json({
