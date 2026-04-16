@@ -1,10 +1,8 @@
 import connectDB from '../config/db';
 
-const db = await connectDB();
-
-
 const Progress = {
   markAsCompleted: async (userId: number, lessonId: number) => {
+    const db: any = await connectDB();
     const sql = `
       INSERT INTO progress (user_id, lesson_id, completed, completion_percentage, completed_at) 
       VALUES (?, ?, 1, 100.00, NOW())
@@ -23,6 +21,7 @@ const Progress = {
   },
 
   isLessonCompleted: async (userId: number, lessonId: number): Promise<boolean> => {
+    const db: any = await connectDB();
     const sql = 'SELECT COUNT(*) as count FROM progress WHERE user_id = ? AND lesson_id = ? AND completed = 1';
     try {
       const [rows] = await db.execute(sql, [userId, lessonId]) as any[];
@@ -34,6 +33,7 @@ const Progress = {
   },
 
   getProgressForCourse: async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const sql = `
       SELECT p.lesson_id 
       FROM progress p
@@ -50,6 +50,7 @@ const Progress = {
   },
 
   deleteProgressForCourse: async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const sql = `
       DELETE p 
       FROM progress p
@@ -67,4 +68,3 @@ const Progress = {
 };
 
 export default Progress;
-

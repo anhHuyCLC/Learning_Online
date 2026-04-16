@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../app/store";
 import { Header } from "../components/Header";
 import "../styles/Dashboard.css"; 
 
 const UserSettings: React.FC = () => {
-    const navigate = useNavigate();
     const { user } = useAppSelector((state) => state.auth);
 
     const [name, setName] = useState(user?.name || "");

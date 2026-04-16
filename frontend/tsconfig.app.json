@@ -24,6 +24,9 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["frontend/src"]
+  "include": [
+    "src",
+    "src/**/*.d.ts"
+  ]
 }
 

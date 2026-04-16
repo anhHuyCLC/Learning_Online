@@ -209,7 +209,7 @@ const courseSlice = createSlice({
       state.error = action.payload || 'Failed to update course';
     })
     // Delete Course
-    .addCase(deleteCourse.pending, (state) => {
+    .addCase(deleteCourse.pending, () => {
       // Optionally set a specific loading flag for deletion
     })
     .addCase(deleteCourse.fulfilled, (state, action) => {

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { useNavigate } from 'react-router-dom';
-import { topUpBalance } from '../features/authSlice'; // Sẽ tạo ở bước sau
-import '../styles/Dashboard.css'; // Tái sử dụng style
+import { updateBalance } from '../features/authSlice';
+import apiClient from '../services/apiClient';
+import '../styles/Dashboard.css';
 
 const PRESET_AMOUNTS = [100000, 200000, 500000, 1000000];
 
@@ -14,6 +15,9 @@ const TopUpPage: React.FC = () => {
     const [amount, setAmount] = useState<number>(PRESET_AMOUNTS[0]);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
+   
+    const [paymentData, setPaymentData] = useState<{ orderCode: string, qrUrl: string } | null>(null);
+    const [isPolling, setIsPolling] = useState(false);
 
     const handleTopUp = async () => {
         const topUpValue = customAmount ? parseInt(customAmount.replace(/,/g, ''), 10) : amount;
@@ -25,11 +29,12 @@ const TopUpPage: React.FC = () => {
         setError(null);
 
         try {
-            await dispatch(topUpBalance(topUpValue)).unwrap();
-            alert('Nạp tiền thành công!');
-            navigate('/profile');
+            const response = await apiClient.post('/transactions/create-topup', { amount: topUpValue });
+            
+            setPaymentData({ orderCode: response.data.orderCode, qrUrl: response.data.qrUrl });
+            setIsPolling(true);
         } catch (err: any) {
-            setError(err || "Có lỗi xảy ra khi nạp tiền.");
+            setError(err || "Có lỗi xảy ra khi tạo giao dịch.");
         }
     };
 
@@ -45,6 +50,58 @@ const TopUpPage: React.FC = () => {
             }
         }
     };
+
+
+    useEffect(() => {
+        let interval: number | undefined;
+        if (isPolling && paymentData) {
+            interval = window.setInterval(async () => {
+                try {
+                    // Gọi API Backend để kiểm tra trạng thái của orderCode
+                    const response = await apiClient.get(`/transactions/status/${paymentData.orderCode}`);
+                    if (response.data.status === 'success') {
+                        setIsPolling(false);
+                        dispatch(updateBalance(response.data.newBalance)); // Cập nhật số dư mới
+                        alert('Nạp tiền thành công!');
+                        navigate('/profile');
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi kiểm tra trạng thái", error);
+                }
+            }, 3000); // Check mỗi 3 giây
+        }
+        return () => {
+            if (interval) window.clearInterval(interval);
+        };
+    }, [isPolling, paymentData, navigate]);
+
+    if (paymentData) {
+        return (
+            <div className="dashboard-container" style={{ maxWidth: '600px', margin: '40px auto' }}>
+                <div className="card text-center">
+                    <h2 className="heading-2 mb-4">Quét mã QR để thanh toán</h2>
+                    <p className="text-muted mb-4">Sử dụng ứng dụng ngân hàng để quét mã. Giao dịch sẽ tự động được xử lý.</p>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+                        <img src={paymentData.qrUrl} alt="VietQR" style={{ maxWidth: '100%', borderRadius: '8px' }} />
+                    </div>
+                    
+                    <div className="form-group mt-4">
+                        <p>Nội dung chuyển khoản: <strong className="text-mono">{paymentData.orderCode}</strong></p>
+                    </div>
+
+                    <div className="loading-container" style={{ height: 'auto', padding: '20px' }}>
+                        <div className="spinner" style={{ width: '24px', height: '24px', borderWidth: '3px' }}></div>
+                        <span style={{ marginLeft: '12px' }}>Đang chờ thanh toán...</span>
+                    </div>
+                    
+                    <button className="btn-secondary mt-4" onClick={() => { setPaymentData(null); setIsPolling(false); }}>
+                        Hủy giao dịch
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-container" style={{ maxWidth: '700px', margin: '40px auto' }}>

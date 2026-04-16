@@ -153,6 +153,12 @@ const authSlice = createSlice({
       localStorage.removeItem('user');
       localStorage.removeItem('token');
     },
+    updateBalance: (state, action: PayloadAction<number>) => {
+      if (state.user) {
+        state.user.balance = action.payload;
+        localStorage.setItem('user', JSON.stringify(state.user));
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -199,5 +205,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, logout } = authSlice.actions;
+export const { clearError, logout, updateBalance } = authSlice.actions;
 export default authSlice.reducer;

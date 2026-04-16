@@ -8,6 +8,4 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  root: 'frontend',
 })
-

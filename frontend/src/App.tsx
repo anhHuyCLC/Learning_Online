@@ -35,6 +35,7 @@ import Settings from "./pages/Settings.tsx";
 import AdminUsers from "./pages/AdminUsers.tsx";
 import AdminCategories from "./pages/AdminCategories.tsx";
 import AdminTransactions from "./pages/AdminTransactions.tsx";
+import TopUpPage from "./pages/TopUpPage.tsx";
 
 
 function App() {
@@ -53,6 +54,8 @@ function App() {
           <Route path="/my-enrollments" element={<StudentEnrollments />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/quiz/lesson/:lessonId" element={<QuizPage />} />
+          <Route path="/top-up" element={<TopUpPage />} />
+          
         </Route>
 
         {/* Protected Teacher Routes */}

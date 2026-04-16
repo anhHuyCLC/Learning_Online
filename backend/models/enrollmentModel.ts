@@ -1,9 +1,8 @@
 import connectDB from "../config/db";
 
-const db = await connectDB();
-
 // Get all enrollments for a user
 export const getUserEnrollments = async (userId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `WITH ProgressCTE AS (
             SELECT
@@ -50,6 +49,7 @@ export const getUserEnrollments = async (userId: number) => {
 
 // Get enrollment by user and course (any status)
 export const getAnyEnrollmentByUserAndCourse = async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `SELECT * FROM enrollments 
         WHERE user_id = ? AND course_id = ?
@@ -61,6 +61,7 @@ export const getAnyEnrollmentByUserAndCourse = async (userId: number, courseId: 
 
 // Get enrollment by user and course (active only)
 export const getEnrollmentByUserAndCourse = async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `SELECT * FROM enrollments 
         WHERE user_id = ? AND course_id = ? AND status = 'active'`,
@@ -71,6 +72,7 @@ export const getEnrollmentByUserAndCourse = async (userId: number, courseId: num
 
 // Create enrollment
 export const createEnrollment = async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `INSERT INTO enrollments (user_id, course_id, enrolled_at, status) 
         VALUES (?, ?, NOW(), 'active')`,
@@ -81,6 +83,7 @@ export const createEnrollment = async (userId: number, courseId: number) => {
 
 // Re-activate cancelled enrollment (for re-enrollment)
 export const reactivateEnrollment = async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `UPDATE enrollments SET status = 'active', enrolled_at = NOW()
         WHERE user_id = ? AND course_id = ? AND status = 'cancelled'`,
@@ -91,6 +94,7 @@ export const reactivateEnrollment = async (userId: number, courseId: number) => 
 
 // Re-enroll in a course
 export const reEnroll = async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `UPDATE enrollments SET status = 'active', enrolled_at = NOW()
         WHERE user_id = ? AND course_id = ?`,
@@ -101,6 +105,7 @@ export const reEnroll = async (userId: number, courseId: number) => {
 
 // Delete enrollment
 export const deleteEnrollment = async (userId: number, courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `UPDATE enrollments SET status = 'cancelled' 
         WHERE user_id = ? AND course_id = ?`,
@@ -111,6 +116,7 @@ export const deleteEnrollment = async (userId: number, courseId: number) => {
 
 // Get enrollment count for a course
 export const getCourseEnrollmentCount = async (courseId: number) => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `SELECT COUNT(*) as count FROM enrollments 
         WHERE course_id = ? AND status = 'active'`,
@@ -125,6 +131,7 @@ export const getCourseEnrollmentCount = async (courseId: number) => {
 
 // Get all enrollments for admin view
 export const getAllEnrollments = async () => {
+    const db: any = await connectDB();
     const [result]: any = await db.execute(
         `WITH ProgressCTE AS (
             SELECT

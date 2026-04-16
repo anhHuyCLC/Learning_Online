@@ -1,9 +1,8 @@
 import connectDB from "../config/db";
 
-const db = await connectDB();
-
 // Find a quiz by its ID, including questions and options (without correct answers)
 export const findQuizById = async (quizId: number) => {
+  const db: any = await connectDB();
   const [quizResult]: any = await db.execute(
     "SELECT id, title FROM quizzes WHERE id = ?",
     [quizId]
@@ -33,6 +32,7 @@ export const findQuizById = async (quizId: number) => {
 
 // Find the correct answers for a given quiz to calculate the score
 export const findCorrectAnswers = async (quizId: number) => {
+  const db: any = await connectDB();
   const [answers]: any = await db.execute(`
     SELECT q.id as question_id, qo.id as correct_option_id
     FROM questions q
@@ -51,6 +51,7 @@ export const findCorrectAnswers = async (quizId: number) => {
 
 // Save a user's quiz result to the database
 export const saveQuizResult = async (userId: number, quizId: number, score: number) => {
+  const db: any = await connectDB();
   const [result] = await db.execute(
     "INSERT INTO user_quiz_results (user_id, quiz_id, score, taken_at) VALUES (?, ?, ?, ?)",
     [userId, quizId, score, new Date()]
@@ -60,6 +61,7 @@ export const saveQuizResult = async (userId: number, quizId: number, score: numb
 
 // Find a quiz associated with a lesson, including its questions and options
 export const findQuizByLessonId = async (lessonId: number) => {
+  const db: any = await connectDB();
   const [quizRows]: any = await db.execute(
     'SELECT id, title, lesson_id FROM quizzes WHERE lesson_id = ?',
     [lessonId]
@@ -89,6 +91,7 @@ export const findQuizByLessonId = async (lessonId: number) => {
 };
 
 export const getUserQuizStatus = async (userId: number, lessonId: number) => {
+  const db: any = await connectDB();
   const [rows]: any = await db.execute(`
     SELECT MAX(uqr.score) as highest_score
     FROM user_quiz_results uqr

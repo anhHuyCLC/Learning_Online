@@ -1,14 +1,12 @@
 import connectDB from "../config/db";
 
-const db = await connectDB();
-
-
 export const createUser = async (
     name: string,
     email: string,
     password: string,
     role: string
 ) => {
+    const db: any = await connectDB();
 
     const [result]: any = await db.execute(
         "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
@@ -19,6 +17,7 @@ export const createUser = async (
 };
 
 export const findUserByEmail = async (email: string) => {
+  const db: any = await connectDB();
 
   const [rows]: any = await db.execute(
     "SELECT * FROM users WHERE email = ?",

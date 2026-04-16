@@ -233,7 +233,6 @@ export default function Home() {
 
           <div className="courses-grid">
             {courses.map((course: Courses) => {
-              // Giả sử backend trả về đường dẫn tương đối nhất quán (ví dụ: /uploads/courses/image.png)
               const imageUrl = course.image
                 ? `${API_URL}${course.image}`
                 : "https://via.placeholder.com/400x300?text=Course+Image";
@@ -274,12 +273,12 @@ export default function Home() {
         <div className="cta-content">
           <h2>Sẵn Sàng Chuyển Đổi Sự Nghiệp Của Bạn?</h2>
           <p>Tham gia hơn 50.000 học viên đã bắt đầu hành trình học tập của họ</p>
-          <button
+          {/* <button
             className="btn-premium btn-large"
-            onClick={() => navigate(isLogin ? "/dashboard" : "/register")}
+            onClick={() => navigate(isLogin ? "/" : "/register")}
           >
-            {isLogin ? "Đi Đến Bảng Điều Khiển" : "Bắt Đầu Dùng Thử Miễn Phí"}
-          </button>
+            {isLogin ? "Bắt Đầu Dùng Thử Miễn Phí" : "Đăng Ký Ngay"}
+          </button> */}
         </div>
       </section>
 

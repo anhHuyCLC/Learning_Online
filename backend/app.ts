@@ -4,16 +4,17 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import userRoutes from "./routes/userRoutes";
-import courseRoutes from "./routes/courseRoute";
+import courseRoutes from "./routes/courseRoutes";
 import enrollmentRoutes from "./routes/enrollmentRoutes";
 import quizRoutes from "./routes/quizRoutes";
 import lessonProgressRoutes from "./routes/lessonProgressRoutes";
 import teacherRoutes from "./routes/teacherRoutes";
 import adminRoutes from "./routes/adminRoutes";
+import transactionRoutes from "./routes/transactionRoutes";
 
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.resolve();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -31,6 +32,7 @@ app.use("/api", courseRoutes);
 app.use("/api", enrollmentRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use('/api/progress', lessonProgressRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Protected dashboard routes
 app.use("/api/teacher", teacherRoutes);
