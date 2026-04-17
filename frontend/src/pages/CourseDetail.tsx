@@ -18,7 +18,7 @@ export default function CourseDetail() {
     const enrollment = enrollmentData[courseId];
     const isUserEnrolled = isEnrolled[courseId] || false;
     const [enrollError, setEnrollError] = useState<string | null>(null);
-    const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
+    const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
 
     useEffect(() => {
         if (id) {

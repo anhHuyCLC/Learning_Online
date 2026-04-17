@@ -32,7 +32,7 @@ const CourseFormPage = () => {
                 setDescription(existingCourse.description);
                 setPrice(existingCourse.price || 0);
                 if (existingCourse.image) {
-                    const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
+                    const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
                     setImagePreview(`${API_URL}${existingCourse.image}`);
                 }
             }

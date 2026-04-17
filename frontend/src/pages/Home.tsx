@@ -12,7 +12,7 @@ export default function Home() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
+  const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
 
   const user = useAppSelector((state: RootState) => state.auth.user);
   const { courses, loading, error } = useAppSelector((state) => state.courses);

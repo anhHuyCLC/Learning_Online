@@ -8,7 +8,7 @@ export default function TeacherCourses() {
   const [courses, setCourses] = useState<Courses[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const API_URL = (import.meta as any).env.VITE_API_URL || "http://localhost:3000";
+  const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
 
   useEffect(() => {
     loadCourses();
