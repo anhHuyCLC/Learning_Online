@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { createCourse, updateCourse, getCourseById } from '../features/courseSlice';
-import '../styles/Dashboard.css'; // Tái sử dụng style từ dashboard
+import '../styles/dashboard.css'; // Tái sử dụng style từ dashboard
 
 const CourseFormPage = () => {
     const { courseId } = useParams();

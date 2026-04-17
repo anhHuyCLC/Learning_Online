@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { fetchTeacherDashboardData } from '../features/teacherSlice';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 import { useNavigate } from 'react-router-dom';
 
 const TeacherDashboard = () => {

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { fetchCourseStudents } from '../features/teacherSlice';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 
 const TeacherCourseStudents = () => {
     const { courseId } = useParams<{ courseId: string }>();

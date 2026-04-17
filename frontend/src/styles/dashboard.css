@@ -943,3 +943,150 @@
   object-fit: cover;
   background: var(--f8-border);
 }
+
+/* ================= PAYMENT UI ================= */
+
+.payment-container {
+  max-width: 520px;
+  margin: 40px auto;
+}
+
+.payment-card {
+  text-align: center;
+  padding: 32px 24px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ffffff, #fafafa);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--f8-border);
+  position: relative;
+}
+
+.payment-title {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.payment-desc {
+  color: var(--f8-text-muted);
+  margin-bottom: 20px;
+}
+
+.qr-wrapper {
+  padding: 16px;
+  border-radius: 20px;
+  background: white;
+  display: inline-block;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.qr-wrapper img {
+  width: 220px;
+}
+
+.qr-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 24px;
+  border: 2px solid var(--f8-primary);
+  animation: pulse 1.6s infinite;
+
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  70% { transform: scale(1.05); opacity: 0; }
+}
+
+.payment-code {
+  margin-top: 16px;
+}
+
+.payment-code strong {
+  color: var(--f8-primary);
+  background: var(--f8-primary-light);
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.payment-status {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  color: var(--f8-primary);
+  font-weight: 600;
+}
+
+.btn-cancel-payment {
+  margin-top: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--f8-border);
+  padding: 10px 18px;
+  background: white;
+  color: var(--f8-danger);
+}
+
+.btn-cancel-payment:hover {
+  background: var(--f8-danger-light);
+}
+
+/* ================= SUCCESS ANIMATION ================= */
+
+.payment-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* SVG */
+.checkmark {
+  width: 80px;
+  height: 80px;
+  stroke: var(--f8-success);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: scaleIn 0.3s ease-in-out;
+}
+
+/* Circle animation */
+.checkmark circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke: var(--f8-success);
+  fill: none;
+  animation: drawCircle 0.6s ease-out forwards;
+}
+
+/* Tick animation */
+.checkmark path {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke: var(--f8-success);
+  animation: drawCheck 0.4s 0.6s ease-out forwards;
+}
+
+/* Animations */
+@keyframes drawCircle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

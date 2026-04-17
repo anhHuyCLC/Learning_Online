@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getCategories, deleteCategory, saveCategory } from '../services/categoryService';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState<any[]>([]);

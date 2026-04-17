@@ -2,7 +2,7 @@ import type { CourseStudent } from '../type/teacherTypes';
 import { Modal } from './Modal';
 import { Button } from './Button';
 import { Loading } from './Loading';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 
 interface Props {
   courseName: string;

@@ -107,7 +107,6 @@ const Settings: React.FC = () => {
 
             <div className="mt-6" style={{ display: 'flex', gap: '12px' }}>
               <button type="submit" className="btn-primary" disabled={loading}>{loading ? "Đang Cập Nhật..." : "Lưu Thay Đổi"}</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate("/profile")}>Quay Lại</button>
             </div>
           </form>
         </div>

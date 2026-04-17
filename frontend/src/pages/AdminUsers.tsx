@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { fetchAdminDashboardData, updateUserRole, deleteUser } from '../features/adminSlice';
 import type { User } from '../type/userType';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 
 const AdminUsers = () => {
   const dispatch = useAppDispatch();

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { getAllCoursesAdmin, deleteCourse } from '../features/courseSlice';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 
 const AdminCourses = () => {
     const navigate = useNavigate();

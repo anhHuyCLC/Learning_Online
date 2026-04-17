@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTransactions, getTransactionStats } from '../services/transactionService';
-import '../styles/Dashboard.css';
+import '../styles/dashboard.css';
 
 const AdminTransactions = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
