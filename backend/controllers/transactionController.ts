@@ -1,14 +1,27 @@
 import { Request, Response } from 'express';
 import connectDB from '../config/db';
+import { PoolConnection } from 'mysql2/promise';
 
-export const createTopUpTransaction = async (req: Request, res: Response) => {
+interface AuthRequest extends Request {
+    user?: { id: number };
+}
+
+export const createTopUpTransaction = async (req: AuthRequest, res: Response) => {
     try {
         const { amount } = req.body;
-        const userId = (req as any).user.id;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'Người dùng không được xác thực' });
+        }
+        if (!amount || amount < 10000) { 
+            return res.status(400).json({ message: 'Số tiền không hợp lệ. Tối thiểu là 10,000 VND.' });
+        }
 
         const orderCode = `LMS${Date.now()}`;
-        const connection: any = await connectDB();
+        const connection = await connectDB();
 
+        // Đã sửa: Bỏ cột 'type', lưu orderCode vào 'payment_method' theo đúng DB của bạn
         await connection.execute(
             `INSERT INTO transactions 
             (user_id, amount, status, payment_method, created_at) 
@@ -16,7 +29,11 @@ export const createTopUpTransaction = async (req: Request, res: Response) => {
             [userId, amount, orderCode]
         );
 
-        const qrUrl = `https://img.vietqr.io/image/970422-0862187105-compact2.png?amount=${amount}&addInfo=${orderCode}&accountName=TRINH DUY HUY`;
+        const BANK_ID = process.env.BANK_ID || '970422';
+        const ACCOUNT_NO = process.env.ACCOUNT_NO || '0862187105';
+        const ACCOUNT_NAME = process.env.ACCOUNT_NAME || 'TRINH DUY HUY';
+
+        const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(orderCode)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
 
         res.status(200).json({ success: true, orderCode, qrUrl });
     } catch (error) {
@@ -25,13 +42,18 @@ export const createTopUpTransaction = async (req: Request, res: Response) => {
     }
 };
 
-export const checkTransactionStatus = async (req: Request, res: Response) => {
+export const checkTransactionStatus = async (req: AuthRequest, res: Response) => {
     try {
         const { orderCode } = req.params;
-        const userId = (req as any).user.id;
+        const userId = req.user?.id;
 
-        const connection: any = await connectDB();
+        if (!userId) {
+            return res.status(401).json({ message: 'Người dùng không được xác thực' });
+        }
 
+        const connection = await connectDB();
+        
+        // Đã sửa: Truy vấn bằng cột payment_method
         const [rows]: any = await connection.execute(
             `SELECT status 
              FROM transactions 
@@ -45,11 +67,12 @@ export const checkTransactionStatus = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Không tìm thấy giao dịch' });
         }
 
-        const status = rows[0].status;
+        // status ở đây sẽ là 'completed' chứ không phải 'success' theo cấu trúc ENUM của DB
+        const { status } = rows[0];
         let newBalance = null;
 
-        // Nếu thành công thì lấy balance
-        if (status === 'success') {
+        // Nếu 'completed', lấy số dư mới
+        if (status === 'completed') {
             const [userRows]: any = await connection.execute(
                 "SELECT balance FROM users WHERE id = ?",
                 [userId]
@@ -60,65 +83,123 @@ export const checkTransactionStatus = async (req: Request, res: Response) => {
             }
         }
 
-        res.status(200).json({ status, newBalance });
+        const frontendStatus = status === 'completed' ? 'success' : status;
+        
+        res.status(200).json({ status: frontendStatus, newBalance });
 
     } catch (error) {
         console.error('Lỗi khi kiểm tra trạng thái:', error);
         res.status(500).json({ message: 'Lỗi server khi kiểm tra trạng thái' });
     }
 };
+
 export const sepayWebhook = async (req: Request, res: Response) => {
-    const connection: any = await connectDB();
+    const API_KEY = process.env.SEPAY_WEBHOOK_SECRET;
+    const authHeader = req.headers['authorization'];
+
+    if (!API_KEY) {
+        console.error('❌ Thiếu SEPAY_WEBHOOK_SECRET');
+        return res.sendStatus(200);
+    }
+
+    if (authHeader !== `Apikey ${API_KEY}`) {
+        console.warn('❌ Unauthorized webhook');
+        return res.status(401).send('Unauthorized');
+    }
+
+    const connection = await connectDB() as PoolConnection;
 
     try {
         const { transferAmount, content } = req.body;
-
-        const orderCodeMatch = content?.match(/LMS\d+/);
-        if (!orderCodeMatch) {
-            return res.status(200).json({ success: true });
+        const match = content?.match(/LMS\d+/);
+        
+        if (!match) {
+            console.log('⚠️ Không tìm thấy orderCode trong content');
+            return res.sendStatus(200);
         }
 
-        const orderCode = orderCodeMatch[0];
+        const orderCode = match[0];
 
-        const [txRows]: any = await connection.execute(
-            `SELECT * FROM transactions 
-             WHERE payment_method = ? AND status = 'pending' 
-             LIMIT 1`,
+        await connection.beginTransaction();
+
+        // Đã sửa: Tìm order bằng cột payment_method
+        const [rows]: any = await connection.execute(
+            `SELECT * FROM transactions WHERE payment_method = ? FOR UPDATE`,
             [orderCode]
         );
 
-        if (!txRows || txRows.length === 0) {
-            return res.status(200).json({ success: true });
+        if (!rows || rows.length === 0) {
+            console.log(`⚠️ Không tìm thấy transaction: ${orderCode}`);
+            await connection.rollback();
+            return res.sendStatus(200);
         }
 
-        const tx = txRows[0];
+        const tx = rows[0];
 
-        if (transferAmount >= tx.amount) {
-            await connection.beginTransaction();
-
-            // Update trạng thái
-            await connection.execute(
-                `UPDATE transactions 
-                 SET status = 'success' 
-                 WHERE payment_method = ?`,
-                [orderCode]
-            );
-
-            await connection.execute(
-                `UPDATE users 
-                 SET balance = balance + ? 
-                 WHERE id = ?`,
-                [tx.amount, tx.user_id] 
-            );
-
-            await connection.commit();
+        if (tx.status !== 'pending') {
+            console.log('⚠️ Transaction đã được xử lý trước đó');
+            await connection.rollback();
+            return res.sendStatus(200);
         }
 
-        res.status(200).json({ success: true });
+        if (transferAmount < tx.amount) {
+            console.log(`⚠️ Số tiền không đủ: ${transferAmount} < ${tx.amount}`);
+            await connection.rollback();
+            return res.sendStatus(200);
+        }
+
+        // Đã sửa: Dùng 'completed' theo đúng chuẩn ENUM
+        await connection.execute(
+            `UPDATE transactions SET status = 'completed' WHERE id = ?`,
+            [tx.id]
+        );
+
+        await connection.execute(
+            `UPDATE users SET balance = balance + ? WHERE id = ?`,
+            [tx.amount, tx.user_id]
+        );
+
+        await connection.commit();
+        console.log(`✅ Nạp tiền thành công: ${orderCode} | User: ${tx.user_id}`);
+        return res.sendStatus(200);
 
     } catch (error) {
-        await connection.rollback();
-        console.error('Webhook error:', error);
-        res.status(500).json({ message: 'Webhook xử lý thất bại' });
+        console.error('❌ Lỗi webhook:', error);
+        try {
+            await connection.rollback();
+        } catch (rollbackError) {
+            console.error('Lỗi khi rollback:', rollbackError);
+        }
+        return res.sendStatus(200); 
+    } finally {
+        connection.release();
+    }
+};
+
+export const cancelTransaction = async (req: AuthRequest, res: Response) => {
+    try {
+        const { orderCode } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId || !orderCode) {
+            return res.status(400).json({ message: 'Yêu cầu không hợp lệ' });
+        }
+
+        const connection = await connectDB();
+        
+        const [result]: any = await connection.execute(
+            `UPDATE transactions SET status = 'failed' 
+             WHERE payment_method = ? AND user_id = ? AND status = 'pending'`,
+            [orderCode, userId]
+        );
+
+        if (result.affectedRows > 0) {
+            res.status(200).json({ success: true, message: 'Giao dịch đã được hủy' });
+        } else {
+            res.status(404).json({ success: false, message: 'Không tìm thấy giao dịch đang chờ' });
+        }
+    } catch (error) {
+        console.error('Lỗi khi hủy giao dịch:', error);
+        res.status(500).json({ message: 'Lỗi server khi hủy giao dịch' });
     }
 };

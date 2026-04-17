@@ -1,84 +1,73 @@
 @import "./vars.css";
 
 /* ============================================
-   COMPONENT HEADER (NEW)
+   COMPONENT HEADER (UPGRADED)
    ============================================ */
 
 .component-header {
-  display: flex;
-  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* Cấu trúc Grid 3 cột hoàn hảo */
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 0;
+  padding: 24px 0;
   margin-bottom: 32px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  position: relative;
+  border-bottom: 1px solid var(--border);
 }
 
-/* LEFT (BACK BUTTON) */
-.header-back {
-  position: absolute;
-  left: 200px;
+/* LEFT */
+.header-left {
+  display: flex;
+  justify-content: flex-start;
 }
 
-/* CENTER CONTENT */
-.header-content {
-  margin: 0 auto;
+/* CENTER */
+.header-center {
   text-align: center;
 }
 
-.header-content h1 {
-  font-size: 28px;
+.header-title {
+  font-size: 24px;
   font-weight: 800;
   margin: 0;
-  color: var(--text);
+  color: var(--text-main);
+  letter-spacing: -0.5px; /* Ép chữ lại một chút tạo cảm giác hiện đại */
 }
 
-.header-content p {
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: var(--fs-base);
+.header-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 14px;
 }
 
-/* RIGHT ACTION */
-.header-action {
-  position: absolute;
-  right: 0;
+/* RIGHT */
+.header-right {
   display: flex;
+  justify-content: flex-end;
   gap: var(--g);
-  align-items: center;
 }
 
 /* ============================================
-   BACK BUTTON (UPGRADE)
+   BACK BUTTON (SVG OPTIMIZED)
    ============================================ */
 
 .btn-back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-
+  gap: 8px; /* Tăng khoảng cách icon và text */
+  padding: 8px 12px;
   background: transparent;
   border: none;
-  color: var(--primary);
-  font-size: var(--fs-sm);
+  color: var(--text-muted); /* Dùng màu xám nhạt thay vì màu Primary sẽ "tây" hơn */
+  font-size: 14px;
   font-weight: 600;
-
   cursor: pointer;
-  border-radius: 6px;
-  transition: all var(--trans) var(--ease);
+  border-radius: var(--radius-md);
+  transition: all var(--trans);
+  font-family: inherit;
 }
 
 .btn-back:hover {
-  background: rgba(0, 102, 255, 0.08);
+  color: var(--text-main); /* Hover vào thì đổi sang xám đậm */
+  background: var(--border); /* Thêm nền xám cực nhẹ */
   transform: translateX(-2px);
-}
-
-/* remove ugly focus */
-.btn-back:focus {
-  outline: none;
-  box-shadow: none;
 }
 
 /* ============================================

@@ -1,318 +1,192 @@
-/* === CSS VARIABLES === */
-:root {
-    --primary: #667eea;
-    --primary-dark: #764ba2;
-    --secondary: #34d399;
-    --danger: #ef4444;
-    --danger-dark: #dc2626;
-    --gray-light: #f0f0f0;
-    --gray-border: #e0e0e0;
-    --gray-text: #666;
-    --gray-dark: #333;
-    --gray-subtle: #999;
-    --secondary-text: #768cba;
-    
-    --radius: 12px;
-    --radius-sm: 6px;
-    --radius-full: 20px;
-    
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 12px 24px rgba(102, 126, 234, 0.15);
-    
-    --transition: all 0.3s ease;
-}
-
-/* === RESET === */
-* {
-    box-sizing: border-box;
-}
-
 /* === BASE STYLES === */
-
-/* Student Enrollments Page */
 .enrollments-page {
     min-height: 100vh;
-    background: 
-  linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
-  linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    padding: 2rem;
+    background-color: var(--bg-body);
+    padding: 40px 24px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
 }
 
 .enrollments-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.enrollments-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.enrollments-header p {
+    color: var(--text-muted);
 }
 
 /* === BUTTONS === */
-
-.btn-back,
-.btn-unenroll {
+.btn-back, .btn-unenroll {
     border: none;
-    border-radius: var(--radius-sm);
-    font-weight: 500;
+    border-radius: var(--radius-md);
+    font-weight: 600;
     cursor: pointer;
-    transition: var(--transition);
+    transition: var(--trans);
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
+    font-family: var(--font-family);
 }
 
 .btn-back {
-    background: rgba(102, 126, 234, 0.1);
+    background: transparent;
     color: var(--primary);
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 8px 16px;
+    font-size: 14px;
 }
 
-.btn-back:hover,
-.btn-back:focus {
-    background: var(--primary);
-    color: white;
-    transform: translateX(-3px);
-    outline: none;
-    box-shadow: none;
+.btn-back:hover {
+    background: var(--primary-light);
+    transform: translateX(-4px);
 }
 
 .btn-unenroll {
-    padding: 0.6rem 1.2rem;
-    background: linear-gradient(135deg, var(--danger) 0%, var(--danger-dark) 100%);
-    color: white;
-    font-size: 0.9rem;
-    white-space: nowrap;
+    padding: 8px 16px;
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    font-size: 14px;
 }
 
 .btn-unenroll:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    background: var(--danger-light);
 }
 
-.btn-unenroll:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* === CONTAINER === */
+/* === CONTAINER & TABS === */
 .enrollments-container {
     width: 100%;
-    max-width: 1200px;
-    padding: 2rem;
-    background: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
+    max-width: 1100px;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
 }
 
-/* === FILTER TABS === */
 .filter-tabs {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    border-bottom: 2px solid var(--gray-border);
-    padding-bottom: 1rem;
+    gap: 24px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
 }
 
 .filter-tab {
     background: none;
     border: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+    padding: 12px 4px;
+    font-size: 15px;
     font-weight: 500;
-    color: var(--gray-text);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: var(--transition);
-    border-bottom: 3px solid transparent;
-    margin-bottom: -1rem;
-    position: relative;
-    bottom: -1rem;
+    transition: all var(--trans);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
 }
 
-.filter-tab:hover,
+.filter-tab:hover {
+    color: var(--text-main);
+}
+
 .filter-tab.active {
     color: var(--primary);
-}
-
-.filter-tab.active {
     border-bottom-color: var(--primary);
+    font-weight: 600;
 }
 
-.filter-tab:focus {
-    outline: none;
-    box-shadow: none;
-}
-
-/* === LOADING & EMPTY STATES === */
-.loading-container,
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 6rem 2rem;
-}
-
-.loading-container .spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid var(--gray-light);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.loading-container p,
-.empty-state p {
-    color: var(--gray-text);
-    font-size: 1rem;
-}
-
-.loading-container p {
-    font-size: 1.1rem;
-}
-
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-    color: var(--gray-dark);
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-
-/* === GRID === */
+/* === GRID & CARDS === */
 .enrollments-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
 }
 
 .enrollment-card {
-    background: white;
-    border-radius: 12px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--trans);
     display: flex;
     flex-direction: column;
 }
 
 .enrollment-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: #cbd5e1;
 }
 
-/* === ENROLLMENT CARD === */
-.enrollment-card {
-    background: white;
-    border-radius: var(--radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    display: flex;
-    flex-direction: column;
-}
-
-.enrollment-card:hover {
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-hover);
-}
-
-/* Image Section */
 .enrollment-image {
     position: relative;
     width: 100%;
-    height: 200px;
-    overflow: hidden;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    height: 160px;
+    background: #f1f5f9;
 }
 
 .enrollment-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: var(--transition);
 }
 
-.enrollment-card:hover .enrollment-image img {
-    transform: scale(1.05);
-}
-
-/* Status Badge */
 .status-badge {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-full);
-    font-size: 0.9rem;
-    font-weight: 600;
-    backdrop-filter: blur(10px);
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
     color: white;
 }
 
-.status-badge.status-active {
-    background: rgba(52, 211, 153, 0.9);
-}
+.status-badge.status-active { background: var(--warning); }
+.status-badge.status-completed { background: var(--success); }
 
-.status-badge.status-completed {
-    background: rgba(34, 197, 94, 0.9);
-}
-
-/* Content Section */
+/* === CARD CONTENT === */
 .enrollment-content {
-    padding: 1.5rem;
+    padding: 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
 .enrollment-content h3 {
-    color: var(--gray-dark);
-    font-size: 1.25rem;
-    margin: 0 0 0.5rem 0;
+    color: var(--text-main);
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
     line-height: 1.4;
 }
 
 .teacher-name {
-    color: var(--secondary-text);
-    font-size: 0.95rem;
-    margin: 0 0 0.5rem 0;
-    font-weight: 500;
-}
-
-.course-description {
-    color: var(--gray-text);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin: 0 0 1rem 0;
-    flex: 1;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 0 0 16px 0;
 }
 
 /* === PROGRESS BAR === */
 .progress-section {
-    margin: 1rem 0;
+    margin: 16px 0;
 }
 
 .progress-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 13px;
     font-weight: 600;
-    color: var(--gray-dark);
+    color: var(--text-main);
+    margin-bottom: 8px;
 }
 
 .progress-percent {
@@ -321,135 +195,29 @@
 
 .progress-bar {
     width: 100%;
-    height: 8px;
-    background: var(--gray-border);
-    border-radius: 4px;
+    height: 6px;
+    background: var(--border);
+    border-radius: var(--radius-full);
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
-    transition: var(--transition);
+    background-color: var(--primary);
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease;
 }
 
-/* === FOOTER === */
 .enrollment-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--gray-border);
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
 }
 
 .enrolled-date {
-    font-size: 0.85rem;
-    color: var(--gray-subtle);
-    white-space: nowrap;
-}
-
-/* === ERROR BANNER === */
-.error-banner {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    border-left: 4px solid var(--danger);
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.error-banner p {
-    color: var(--danger-dark);
-    margin: 0;
-    font-weight: 500;
-}
-
-/* === RESPONSIVE DESIGN === */
-
-/* Tablet */
-@media (max-width: 768px) {
-    .enrollments-container {
-        padding: 1rem;
-    }
-
-    .filter-tabs {
-        gap: 0.5rem;
-    }
-
-    .filter-tab {
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-    }
-
-    .enrollments-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    .enrollment-image {
-        height: 150px;
-    }
-
-    .enrollment-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .enrolled-date,
-    .btn-unenroll {
-        width: 100%;
-    }
-
-    .btn-unenroll {
-        text-align: center;
-    }
-}
-
-/* Mobile */
-@media (max-width: 480px) {
-    .enrollments-page {
-        padding: 0.5rem;
-    }
-
-    .enrollments-container {
-        border-radius: 8px;
-    }
-
-    .filter-tabs {
-        gap: 0;
-        margin-bottom: 1rem;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-        scroll-behavior: smooth;
-    }
-
-    .filter-tab {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.85rem;
-        flex-shrink: 0;
-    }
-
-    .enrollment-content h3 {
-        font-size: 1.1rem;
-    }
-
-    .course-description {
-        font-size: 0.85rem;
-    }
-
-    .empty-icon {
-        font-size: 3rem;
-    }
-
-    .empty-state h3 {
-        font-size: 1.2rem;
-    }
-    
-    .enrollment-footer {
-        gap: 0;
-    }
+    font-size: 12px;
+    color: var(--text-muted);
 }

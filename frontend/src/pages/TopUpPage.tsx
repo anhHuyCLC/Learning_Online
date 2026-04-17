@@ -32,7 +32,7 @@ const TopUpPage: React.FC = () => {
             const response = await apiClient.post('/transactions/create-topup', { amount: topUpValue });
             
             setPaymentData({ orderCode: response.data.orderCode, qrUrl: response.data.qrUrl });
-            setIsPolling(true);
+            setIsPolling(true); 
         } catch (err: any) {
             setError(err || "Có lỗi xảy ra khi tạo giao dịch.");
         }
@@ -51,17 +51,32 @@ const TopUpPage: React.FC = () => {
         }
     };
 
+    const handleCancel = async () => {
+        if (paymentData) {
+            try {
+               
+                await apiClient.post('/transactions/cancel', { orderCode: paymentData.orderCode });
+            } catch (error) {
+                console.error("Không thể hủy giao dịch trên server", error);
+
+            } finally {
+                setPaymentData(null);
+                setIsPolling(false);
+            }
+        }
+    };
 
     useEffect(() => {
         let interval: number | undefined;
         if (isPolling && paymentData) {
             interval = window.setInterval(async () => {
                 try {
-                    // Gọi API Backend để kiểm tra trạng thái của orderCode
+                 
                     const response = await apiClient.get(`/transactions/status/${paymentData.orderCode}`);
                     if (response.data.status === 'success') {
                         setIsPolling(false);
-                        dispatch(updateBalance(response.data.newBalance)); // Cập nhật số dư mới
+                        window.clearInterval(interval); 
+                        dispatch(updateBalance(response.data.newBalance)); 
                         alert('Nạp tiền thành công!');
                         navigate('/profile');
                     }
@@ -73,7 +88,7 @@ const TopUpPage: React.FC = () => {
         return () => {
             if (interval) window.clearInterval(interval);
         };
-    }, [isPolling, paymentData, navigate]);
+    }, [isPolling, paymentData, navigate, dispatch]);
 
     if (paymentData) {
         return (
@@ -95,7 +110,7 @@ const TopUpPage: React.FC = () => {
                         <span style={{ marginLeft: '12px' }}>Đang chờ thanh toán...</span>
                     </div>
                     
-                    <button className="btn-secondary mt-4" onClick={() => { setPaymentData(null); setIsPolling(false); }}>
+                    <button className="btn-secondary mt-4" onClick={handleCancel}>
                         Hủy giao dịch
                     </button>
                 </div>

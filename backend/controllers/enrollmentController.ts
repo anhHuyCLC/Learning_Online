@@ -71,103 +71,75 @@ export const checkEnrollment = async (req: any, res: any): Promise<void> => {
     }
 };
 
-// Enroll student in course
 export const enrollInCourse = async (req: any, res: any): Promise<void> => {
     try {
         const userId = req.user?.id;
         const { courseId } = req.body;
         
         if (!userId) {
-            res.status(401).json({
-                success: false,
-                message: "Yêu cầu xác thực"
-            });
-            return;
+            return res.status(401).json({ success: false, message: "Yêu cầu xác thực" });
         }
-
         if (!courseId) {
-            res.status(400).json({
-                success: false,
-                message: "Vui lòng cung cấp ID khóa học"
-            });
-            return;
+            return res.status(400).json({ success: false, message: "Vui lòng cung cấp ID khóa học" });
         }
 
-        // Check if any enrollment exists (regardless of status)
         const existingEnrollment = await getAnyEnrollmentByUserAndCourse(userId, courseId);
         
-        if (existingEnrollment) {
-            if (existingEnrollment.status === 'active') {
-                res.status(409).json({
-                    success: false,
-                    message: "Bạn đã đăng ký khóa học này"
-                });
-                return;
-            } else if (existingEnrollment.status === 'cancelled') {
-                // Re-activate cancelled enrollment and clear progress
-                await Progress.deleteProgressForCourse(userId, courseId);
-                await reactivateEnrollment(userId, courseId);
-                res.status(201).json({
-                    success: true,
-                    message: "Đăng ký khóa học thành công",
-                    enrollmentId: existingEnrollment.id
-                });
-                return;
-            }
+        if (existingEnrollment && existingEnrollment.status === 'active') {
+            return res.status(409).json({ success: false, message: "Bạn đã đăng ký khóa học này" });
         }
-
-        // Bắt đầu logic thanh toán cho khóa học mới
         const connection: any = await connectDB();
         try {
             await connection.beginTransaction();
 
-            // Lấy giá khóa học
             const [courseRows]: any = await connection.execute("SELECT price FROM courses WHERE id = ?", [courseId]);
             const coursePrice = courseRows.length > 0 ? (parseFloat(courseRows[0].price) || 0) : 0;
 
             if (coursePrice > 0) {
-                // Lấy số dư hiện tại của user (Sử dụng FOR UPDATE để khóa dòng, tránh race condition)
                 const [userRows]: any = await connection.execute("SELECT balance FROM users WHERE id = ? FOR UPDATE", [userId]);
                 const currentBalance = userRows.length > 0 ? (parseFloat(userRows[0].balance) || 0) : 0;
 
-                // Kiểm tra số dư
                 if (currentBalance < coursePrice) {
                     await connection.rollback();
-                    res.status(400).json({
-                        success: false,
-                        message: "INSUFFICIENT_BALANCE"
-                    });
-                    return;
+                    return res.status(400).json({ success: false, message: "INSUFFICIENT_BALANCE" });
                 }
 
-                // Trừ tiền user
                 await connection.execute("UPDATE users SET balance = balance - ? WHERE id = ?", [coursePrice, userId]);
 
-                // Lưu lịch sử giao dịch
                 await connection.execute(
-                    "INSERT INTO transactions (user_id, amount, type, status) VALUES (?, ?, 'course_purchase', 'completed')",
+                    "INSERT INTO transactions (user_id, amount, payment_method, status, created_at) VALUES (?, ?, 'course_purchase', 'completed', NOW())",
                     [userId, coursePrice]
                 );
             }
-
-            const result = await createEnrollment(userId, courseId);
+            let enrollmentId;
+            
+            if (existingEnrollment && existingEnrollment.status === 'cancelled') {
+ 
+                await connection.execute("DELETE FROM progress WHERE user_id = ? AND lesson_id IN (SELECT id FROM lessons WHERE course_id = ?)", [userId, courseId]);
+                await connection.execute("UPDATE enrollments SET status = 'active', progress = 0 WHERE user_id = ? AND course_id = ?", [userId, courseId]);
+                enrollmentId = existingEnrollment.id;
+            } else {
+                const [insertResult]: any = await connection.execute("INSERT INTO enrollments (user_id, course_id, status) VALUES (?, ?, 'active')", [userId, courseId]);
+                enrollmentId = insertResult.insertId;
+            }
             await connection.commit();
             
-            res.status(201).json({
+            return res.status(201).json({
                 success: true,
                 message: "Đăng ký khóa học thành công",
-                enrollmentId: result.insertId
+                enrollmentId: enrollmentId
             });
+
         } catch (dbError) {
             await connection.rollback();
             throw dbError;
+        } finally {
+            if (connection) connection.release();
         }
+
     } catch (error) {
         console.error("Enroll error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Lỗi server"
-        });
+        res.status(500).json({ success: false, message: "Lỗi server" });
     }
 };
 
@@ -192,7 +164,6 @@ export const reEnrollInCourse = async (req: any, res: any): Promise<void> => {
             return;
         }
 
-        // Reset progress and enrollment status
         await Progress.deleteProgressForCourse(userId, courseId);
         await reEnroll(userId, courseId);
 
@@ -209,7 +180,6 @@ export const reEnrollInCourse = async (req: any, res: any): Promise<void> => {
     }
 };
 
-// Unenroll student from course
 export const unenrollFromCourse = async (req: any, res: any): Promise<void> => {
     try {
         const userId = req.user?.id;
