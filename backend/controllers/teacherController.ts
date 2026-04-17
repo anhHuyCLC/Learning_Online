@@ -23,7 +23,6 @@ export const getTeacherDashboard = async (req: any, res: Response) => {
     `, [teacherId]);
     const totalStudents = studentsRows[0].total;
 
-    // 3. Total revenue (calculated from teacher's completed enrollments)
     const [revenueRows]: any = await db.execute(`
       SELECT SUM(c.price) as total 
       FROM enrollments e
@@ -46,14 +45,13 @@ export const getTeacherDashboard = async (req: any, res: Response) => {
   }
 };
 
-// Get students enrolled in a specific course owned by the teacher
 export const getMyCourseStudents = async (req: any, res: Response) => {
   try {
     const teacherId = req.user.id;
     const { courseId } = req.params;
     const db = await connectDB();
 
-    // Đầu tiên, xác minh giáo viên sở hữu khóa học
+    // 1. Kiểm tra quyền sở hữu khóa học của giáo viên
     const [courseCheck]: any = await db.execute(
       "SELECT id FROM courses WHERE id = ? AND teacher_id = ?",
       [courseId, teacherId]
@@ -63,9 +61,19 @@ export const getMyCourseStudents = async (req: any, res: Response) => {
       return res.status(403).json({ success: false, message: "You are not authorized to view students for this course." });
     }
 
-    // Lấy danh sách học viên đã đăng ký
     const [students]: any = await db.execute(`
-      SELECT u.id, u.name, u.email, e.enrolled_at, e.progress, e.status
+      SELECT 
+        u.id, 
+        u.name, 
+        u.email, 
+        e.enrolled_at, 
+        e.status,
+        COALESCE(
+          (SELECT AVG(IFNULL(p.completion_percentage, 0))
+           FROM lessons l
+           LEFT JOIN progress p ON p.lesson_id = l.id AND p.user_id = u.id
+           WHERE l.course_id = e.course_id), 
+        0) AS progress
       FROM users u
       JOIN enrollments e ON u.id = e.user_id
       WHERE e.course_id = ? AND e.status != 'cancelled'
@@ -80,24 +88,22 @@ export const getMyCourseStudents = async (req: any, res: Response) => {
   }
 };
 
-// Get detailed statistics for a course owned by the teacher
 export const getMyCourseStatistics = async (req: any, res: Response) => {
-    try {
-        const teacherId = req.user.id;
-        const { courseId } = req.params;
-        const db = await connectDB();
+  try {
+    const teacherId = req.user.id;
+    const { courseId } = req.params;
+    const db = await connectDB();
 
-        // Xác minh quyền sở hữu của giáo viên
-        const [courseCheck]: any = await db.execute(
-            "SELECT id FROM courses WHERE id = ? AND teacher_id = ?",
-            [courseId, teacherId]
-        );
+    const [courseCheck]: any = await db.execute(
+      "SELECT id FROM courses WHERE id = ? AND teacher_id = ?",
+      [courseId, teacherId]
+    );
 
-        if (courseCheck.length === 0) {
-            return res.status(403).json({ success: false, message: "You are not authorized to view stats for this course." });
-        }
+    if (courseCheck.length === 0) {
+      return res.status(403).json({ success: false, message: "You are not authorized to view stats for this course." });
+    }
 
-        const [stats]: any = await db.execute(`
+    const [stats]: any = await db.execute(`
             SELECT
                 COUNT(id) as totalEnrollments,
                 (SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) / COUNT(id)) * 100 as completionRate,
@@ -106,9 +112,9 @@ export const getMyCourseStatistics = async (req: any, res: Response) => {
             WHERE course_id = ?
         `, [courseId]);
 
-        res.json({ success: true, data: stats[0] });
-    } catch (error) {
-        console.error("Error fetching course statistics:", error);
-        res.status(500).json({ success: false, message: "Error fetching course statistics" });
-    }
+    res.json({ success: true, data: stats[0] });
+  } catch (error) {
+    console.error("Error fetching course statistics:", error);
+    res.status(500).json({ success: false, message: "Error fetching course statistics" });
+  }
 };

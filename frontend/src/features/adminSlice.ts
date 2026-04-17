@@ -23,8 +23,15 @@ const initialState: AdminState = {
 export const fetchAdminDashboardData = createAsyncThunk('admin/fetchDashboardData', async (_, { rejectWithValue }) => {
   try {
     const statsData = await adminService.getDashboardStats();
+    
+    console.log("=== DỮ LIỆU BACKEND TRẢ VỀ ===", statsData); 
+
     const usersData = await adminService.getAllUsers();
-    return { stats: statsData.data, users: usersData.data };
+    
+    return { 
+      stats: statsData.data || { totalUsers: 0, totalCourses: 0, totalRevenue: 0 }, 
+      users: usersData.data || [] 
+    };
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch admin data');
   }

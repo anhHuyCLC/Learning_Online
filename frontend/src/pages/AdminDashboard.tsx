@@ -13,10 +13,33 @@ const AdminDashboard = () => {
     dispatch(fetchAdminDashboardData());
   }, [dispatch]);
 
+  const safeTotalUsers = Number((stats as any)?.totalUsers) || 0;
+  const safeTotalCourses = Number((stats as any)?.totalCourses) || 0;
+  const rawRevenue = (stats as any)?.totalRevenue ?? (stats as any)?.totalDeposited ?? 0; 
+  const safeTotalRevenue = Number(rawRevenue) || 0;
+
   const statItems = [
-    { icon: '👥', title: 'Tổng Người Dùng', value: stats.totalUsers, color: 'icon-primary', path: '/admin/users' },
-    { icon: '📚', title: 'Tổng Khóa Học', value: stats.totalCourses, color: 'icon-indigo', path: '/admin/courses' },
-    { icon: '💰', title: 'Tổng Doanh Thu', value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.totalRevenue || 0), color: 'icon-emerald', path: '/admin/transactions' },
+    { 
+      icon: '👥', 
+      title: 'Tổng Người Dùng', 
+      value: safeTotalUsers, 
+      color: 'icon-primary', 
+      path: '/admin/users' 
+    },
+    { 
+      icon: '📚', 
+      title: 'Tổng Khóa Học', 
+      value: safeTotalCourses, 
+      color: 'icon-indigo', 
+      path: '/admin/courses' 
+    },
+    { 
+      icon: '💰', 
+      title: 'Tổng Doanh Thu', 
+      value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(safeTotalRevenue), 
+      color: 'icon-emerald', 
+      path: '/admin/transactions' 
+    },
   ];
 
   return (

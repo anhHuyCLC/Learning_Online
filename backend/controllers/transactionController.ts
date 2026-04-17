@@ -204,65 +204,41 @@ export const cancelTransaction = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// Thêm 2 hàm này vào cuối file transactionController.ts
-
-export const getUserTransactions = async (req: AuthRequest, res: Response) => {
+export const getAdminTransactions = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.id;
-
-        if (!userId) {
-            return res.status(401).json({ message: 'Người dùng không được xác thực' });
-        }
-
-        // Tích hợp phân trang cơ bản
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const offset = (page - 1) * limit;
 
         const connection = await connectDB();
 
-        // Lấy tổng số lượng để frontend làm phân trang
-        const [countResult]: any = await connection.execute(
-            'SELECT COUNT(*) as total FROM transactions WHERE user_id = ?',
-            [userId]
-        );
+        // Đếm tổng số lượng giao dịch
+        const [countResult]: any = await connection.execute('SELECT COUNT(*) as total FROM transactions');
         const total = countResult[0].total;
 
-        // Lấy danh sách giao dịch
-        // Lưu ý: Dùng .query thay vì .execute cho LIMIT/OFFSET để tránh lỗi parse int trong mysql2
+        // JOIN với bảng users để lấy tên người dùng (name)
         const [rows]: any = await connection.query(
-            `SELECT id, amount, status, payment_method, created_at 
-             FROM transactions 
-             WHERE user_id = ? 
-             ORDER BY created_at DESC 
+            `SELECT t.id, t.amount, t.status, t.payment_method, t.created_at, u.name as user_name 
+             FROM transactions t
+             LEFT JOIN users u ON t.user_id = u.id
+             ORDER BY t.created_at DESC 
              LIMIT ? OFFSET ?`,
-            [userId, limit, offset]
+            [limit, offset]
         );
 
         res.status(200).json({
             success: true,
             data: rows,
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
-            }
+            pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
         });
     } catch (error) {
         console.error('Lỗi khi lấy danh sách giao dịch:', error);
-        res.status(500).json({ message: 'Lỗi server khi lấy danh sách giao dịch' });
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
-export const getTransactionStats = async (req: AuthRequest, res: Response) => {
+export const getAdminTransactionStats = async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.id;
-
-        if (!userId) {
-            return res.status(401).json({ message: 'Người dùng không được xác thực' });
-        }
-
         const connection = await connectDB();
 
         const [rows]: any = await connection.execute(
@@ -270,17 +246,12 @@ export const getTransactionStats = async (req: AuthRequest, res: Response) => {
                 COUNT(id) as totalTransactions,
                 COALESCE(SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END), 0) as totalDeposited,
                 COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as totalPending
-             FROM transactions 
-             WHERE user_id = ?`,
-            [userId]
+             FROM transactions`
         );
 
-        res.status(200).json({
-            success: true,
-            stats: rows[0]
-        });
+        res.status(200).json({ success: true, stats: rows[0] });
     } catch (error) {
-        console.error('Lỗi khi lấy thống kê giao dịch:', error);
-        res.status(500).json({ message: 'Lỗi server khi lấy thống kê giao dịch' });
+        console.error('Lỗi khi lấy thống kê:', error);
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };

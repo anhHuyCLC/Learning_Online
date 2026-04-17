@@ -38,7 +38,6 @@ export const enrollmentService = {
     }
   },
 
-  // Unenroll from a course
   unenrollFromCourse: async (courseId: number): Promise<void> => {
     try {
       await apiClient.delete(`/enrollments/${courseId}`);
@@ -48,7 +47,6 @@ export const enrollmentService = {
     }
   },
 
-  // Re-enroll in a course
   reEnrollInCourse: async (courseId: number): Promise<void> => {
     try {
       await apiClient.post(`/enrollments/reenroll`, { courseId });

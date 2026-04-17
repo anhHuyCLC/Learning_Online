@@ -1,26 +1,24 @@
 import { Request, Response } from "express";
 import connectDB from "../config/db";
 
-export const getAdminDashboard = async (req: any, res: Response) => {
+export const getAdminDashboard = async (req: Request, res: Response) => {
   try {
     const db = await connectDB();
 
-    // 1. Total users
     const [usersRows]: any = await db.execute("SELECT COUNT(*) as total FROM users");
     const totalUsers = usersRows[0].total;
 
-    // 2. Total courses
     const [coursesRows]: any = await db.execute("SELECT COUNT(*) as total FROM courses");
     const totalCourses = coursesRows[0].total;
 
-    // 3. Total revenue (calculated from completed enrollments)
     const [revenueRows]: any = await db.execute(`
       SELECT SUM(c.price) as total
       FROM enrollments e
       JOIN courses c ON e.course_id = c.id
-      WHERE e.status = 'completed'
+      WHERE e.status IN ('active', 'completed')
     `);
-    const totalRevenue = revenueRows[0].total || 0;
+   
+    const totalRevenue = Number(revenueRows[0].total) || 0;
 
     res.json({
       success: true,
@@ -31,8 +29,11 @@ export const getAdminDashboard = async (req: any, res: Response) => {
       }
     });
   } catch (error) {
-    console.error("Dashboard error:", error);
-    res.status(500).json({ success: false, message: "Error fetching admin dashboard data" });
+    console.error("Lỗi khi lấy dữ liệu Admin Dashboard:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Lỗi máy chủ khi lấy thống kê bảng điều khiển" 
+    });
   }
 };
 

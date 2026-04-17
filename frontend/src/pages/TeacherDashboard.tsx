@@ -14,10 +14,24 @@ const TeacherDashboard = () => {
         dispatch(fetchTeacherDashboardData());
     }, [dispatch]);
 
+    const calculatedRevenue = courses.reduce((total, course) => {
+        const price = Number(course.price) || 0;
+        const enrollments = Number(course.enrollment_count) || 0;
+        return total + (price * enrollments);
+    }, 0);
+
+    const finalRevenue = (Number(stats.totalRevenue) > 0) ? Number(stats.totalRevenue) : calculatedRevenue;
+
     const statItems = [
         { icon: '📚', title: 'Tổng Khóa Học', value: stats.totalCourses, color: 'icon-primary' },
         { icon: '👥', title: 'Tổng Học Viên', value: stats.totalStudents, color: 'icon-indigo' },
-        { icon: '💰', title: 'Tổng Doanh Thu', value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.totalRevenue || 0), color: 'icon-emerald' },
+        { 
+            icon: '💰', 
+            title: 'Tổng Doanh Thu', 
+            // Hiển thị số tiền đã được tính toán an toàn
+            value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalRevenue), 
+            color: 'icon-emerald' 
+        },
     ];
 
     const handleViewStudents = (course: any) => {

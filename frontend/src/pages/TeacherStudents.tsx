@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchCoursesByTeacher, fetchCourseStudents } from "../services/courseService";
 import "../styles/dashboard.css";
-import { useAppSelector } from "../app/store";
 
 export default function TeacherStudents() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -9,10 +8,6 @@ export default function TeacherStudents() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const { enrollments } = useAppSelector(
-    (state) => state.enrollment
-  );
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -60,7 +55,7 @@ export default function TeacherStudents() {
   const getStatusClass = (status: string) => {
     if (status === 'completed') return 'badge-emerald';
     if (status === 'cancelled') return 'badge-rose';
-    return 'badge-amber'; // Mặc định cho active (Đang học)
+    return 'badge-amber'; // Mặc định cho active
   };
 
   if (loading && courses.length === 0) {
@@ -110,17 +105,7 @@ export default function TeacherStudents() {
                 <tr><td colSpan={5} className="text-center text-muted">Chưa có học viên nào đăng ký khóa học này.</td></tr>
               ) : (
                 students.map(student => {
-                  let formattedProgress = 0;
-                  
-                  if (Array.isArray(enrollments)) {
-                   
-                    const studentEnrollment = enrollments.find(
-                      (e) => e.user_id === student.id && e.course_id === selectedCourseId
-                    );
-                    
-                    const currentProgress = studentEnrollment?.progress || 0;
-                    formattedProgress = Math.round(Number(currentProgress));
-                  }
+                  const formattedProgress = Math.round(Number(student.progress) || 0);
 
                   return (
                     <tr key={student.id}>
@@ -128,7 +113,6 @@ export default function TeacherStudents() {
                       <td className="text-muted">{student.email}</td>
                       <td>{new Date(student.enrolled_at || Date.now()).toLocaleDateString("vi-VN")}</td>
                       
-                      {/* CỘT TIẾN ĐỘ ĐÃ ĐƯỢC CẬP NHẬT */}
                       <td style={{ minWidth: '200px' }}>
                         <div className="progress-container" style={{ marginBottom: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px', fontWeight: 600 }}>

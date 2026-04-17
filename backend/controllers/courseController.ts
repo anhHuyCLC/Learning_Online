@@ -227,7 +227,6 @@ export const getLessonById = async (req: any, res: any): Promise<void> => {
 
 export const getTeacherCourses = async (req: any, res: any): Promise<void> => {
     try {
-        // req.user được middleware authMiddleware giải mã từ token
         const teacherId = req.user.id; 
 
         if (!teacherId) {
@@ -242,7 +241,7 @@ export const getTeacherCourses = async (req: any, res: any): Promise<void> => {
         res.status(200).json({
             success: true,
             message: "Lấy danh sách khóa học của giảng viên thành công",
-            courses // Hoặc tùy cấu trúc trả về bạn mong muốn
+            courses 
         });
     } catch (error) {
         console.error("Get teacher courses error:", error);
@@ -253,7 +252,6 @@ export const getTeacherCourses = async (req: any, res: any): Promise<void> => {
     }
 };
 
-// --- Lesson Management ---
 
 export const createLesson = async (req: any, res: any) => {
     try {
