@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/authSlice";
 import type { RootState } from "../app/store";
-import "../styles/Dashboard.css";
+import "../styles/dashboard.css";
 
 interface NavLink {
   name: string;

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchCoursesByTeacher, deleteCourse } from "../services/courseService";
 import type { Courses } from "../type/coursesType";
-import "../styles/Dashboard.css";
+import "../styles/dashboard.css";
 
 export default function TeacherCourses() {
   const [courses, setCourses] = useState<Courses[]>([]);

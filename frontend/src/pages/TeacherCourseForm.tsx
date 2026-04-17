@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { createCourse, updateCourse, fetchCourseById } from "../services/courseService";
-import "../styles/Dashboard.css";
+import "../styles/dashboard.css";
 
 export default function TeacherCourseForm() {
   const { id } = useParams(); // Lấy ID từ URL nếu đang ở chế độ Edit
