@@ -14,10 +14,10 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 const courseRouter = express.Router();
 
 // Get all courses - protected
-courseRouter.get("/courses", authMiddleware, getCourses);
+courseRouter.get("/courses", getCourses);
 
 // Get course by ID - protected
-courseRouter.get("/courses/:id", authMiddleware, getCourseById);
+courseRouter.get("/courses/:id", getCourseById);
 
 // Get lesson by ID - protected
 courseRouter.get("/lessons/:lessonId", authMiddleware, getLessonById);
