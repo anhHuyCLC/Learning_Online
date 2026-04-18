@@ -108,7 +108,7 @@ const TopUpPage: React.FC = () => {
                         setIsSuccess(true);
 
                         setTimeout(() => {
-                            navigate('/profile');
+                            navigate('/');
                         }, 2000);
                     }
                 } catch (err) {

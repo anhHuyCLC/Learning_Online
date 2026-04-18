@@ -167,7 +167,10 @@ const LessonPage: React.FC = () => {
               </button>
             ) : (
               <button 
-                onClick={() => navigate(`/courses/${courseId}`)} 
+                onClick={() => {
+                  alert("🎉 Chúc mừng bạn đã hoàn thành xuất sắc khóa học!");
+                  navigate('/profile');
+                }} 
                 className="complete-btn"
                 disabled={!canProceedToNext}
                 style={{ 
