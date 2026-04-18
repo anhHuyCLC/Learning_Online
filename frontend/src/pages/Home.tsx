@@ -223,8 +223,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Courses Section (if logged in) */}
-      {isLogin && courses.length > 0 && (
         <section id="courses-section" className="courses-section">
           <div className="section-header">
             <h2>Khóa Học Của Bạn</h2>
@@ -266,19 +264,11 @@ export default function Home() {
           {error && <div className="error-message">{error}</div>}
           {loading && <div className="loading">Đang tải khóa học...</div>}
         </section>
-      )}
 
-      {/* CTA Section */}
       <section className="final-cta">
         <div className="cta-content">
           <h2>Sẵn Sàng Chuyển Đổi Sự Nghiệp Của Bạn?</h2>
           <p>Tham gia hơn 50.000 học viên đã bắt đầu hành trình học tập của họ</p>
-          {/* <button
-            className="btn-premium btn-large"
-            onClick={() => navigate(isLogin ? "/" : "/register")}
-          >
-            {isLogin ? "Bắt Đầu Dùng Thử Miễn Phí" : "Đăng Ký Ngay"}
-          </button> */}
         </div>
       </section>
 

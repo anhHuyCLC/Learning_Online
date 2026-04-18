@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { useNavigate } from 'react-router-dom';
 import { updateBalance } from '../features/authSlice';
@@ -19,6 +19,7 @@ const TopUpPage: React.FC = () => {
 
     const [paymentData, setPaymentData] = useState<{ orderCode: string, qrUrl: string } | null>(null);
     const [isPolling, setIsPolling] = useState(false);
+    const [timeLeft, setTimeLeft] = useState<number>(300); // Đếm ngược 5 phút (300 giây)
 
     const handleTopUp = async () => {
         const topUpValue = customAmount
@@ -40,6 +41,7 @@ const TopUpPage: React.FC = () => {
                 qrUrl: response.data.qrUrl
             });
 
+            setTimeLeft(300); // Đặt lại thời gian đếm ngược về 5 phút mỗi khi tạo giao dịch
             setIsPolling(true);
         } catch (err: any) {
             setError("Có lỗi xảy ra khi tạo giao dịch.");
@@ -59,7 +61,7 @@ const TopUpPage: React.FC = () => {
         }
     };
 
-    const handleCancel = async () => {
+    const handleCancel = useCallback(async () => {
         if (paymentData) {
             try {
                 await apiClient.post('/transactions/cancel', {
@@ -72,7 +74,22 @@ const TopUpPage: React.FC = () => {
                 setIsPolling(false);
             }
         }
-    };
+    }, [paymentData]);
+
+    useEffect(() => {
+        if (!isPolling || !paymentData) return;
+
+        if (timeLeft <= 0) {
+            handleCancel();
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            setTimeLeft(timeLeft - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [isPolling, paymentData, timeLeft, handleCancel]);
 
     useEffect(() => {
         let interval: number | undefined;
@@ -145,7 +162,8 @@ const TopUpPage: React.FC = () => {
 
                     <div className="payment-status">
                         <div className="spinner"></div>
-                        Đang chờ thanh toán...
+                        Đang chờ thanh toán... 
+                        ({Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')})
                     </div>
 
                     <button className="btn-cancel-payment" onClick={handleCancel}>

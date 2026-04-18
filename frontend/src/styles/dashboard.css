@@ -1019,6 +1019,12 @@
   font-weight: 600;
 }
 
+.payment-status .spinner {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+}
+
 .btn-cancel-payment {
   margin-top: 20px;
   border-radius: 999px;
