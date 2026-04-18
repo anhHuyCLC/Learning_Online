@@ -18,11 +18,10 @@ export default function Home() {
   const { courses, loading, error } = useAppSelector((state) => state.courses);
   const isLogin = !!user;
 
+  // Luôn fetch danh sách khóa học bất kể trạng thái đăng nhập
   useEffect(() => {
-    if (isLogin) {
-      dispatch(getCourses());
-    }
-  }, [dispatch, isLogin]);
+    dispatch(getCourses());
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -48,7 +47,7 @@ export default function Home() {
     {
       icon: "🏆",
       title: "Nhận Chứng Chỉ",
-      description: "Được công nhân với các chứng chỉ chuyên nghiệp sau khi hoàn thành"
+      description: "Được công nhận với các chứng chỉ chuyên nghiệp sau khi hoàn thành"
     }
   ];
 
@@ -223,47 +222,48 @@ export default function Home() {
         </div>
       </section>
 
-        <section id="courses-section" className="courses-section">
-          <div className="section-header">
-            <h2>Khóa Học Của Bạn</h2>
-            <p>Tiếp tục cuộc phiêu lưu học tập của bạn</p>
-          </div>
+      {/* Courses Section */}
+      <section id="courses-section" className="courses-section">
+        <div className="section-header">
+          <h2>{isLogin ? "Khóa Học Của Bạn" : "Khám Phá Các Khóa Học"}</h2>
+          <p>{isLogin ? "Tiếp tục cuộc phiêu lưu học tập của bạn" : "Hàng ngàn khóa học chất lượng đang chờ đón bạn"}</p>
+        </div>
 
-          <div className="courses-grid">
-            {courses.map((course: Courses) => {
-              const imageUrl = course.image
-                ? `${API_URL}${course.image}`
-                : "https://via.placeholder.com/400x300?text=Course+Image";
-              return (
-                <div key={course.id} className="course-card">
-                  <div className="course-image">
-                    <img
-                      src={imageUrl}
-                      alt={course.name}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://via.placeholder.com/400x300?text=Course+Image";
-                      }}
-                    />
-                  </div>
-                  <div className="course-meta">
-                    <h3>{course.name}</h3>
-                    <p>{course.description}</p>
-                    <div className="course-footer">
-                      <span className="duration">12 tuần</span>
-                      <button className="btn-text" onClick={() => navigate(`/course/${course.id}`)}>
-                        Tiếp Tục →
-                      </button>
-                    </div>
+        <div className="courses-grid">
+          {courses.map((course: Courses) => {
+            const imageUrl = course.image
+              ? `${API_URL}${course.image}`
+              : "https://via.placeholder.com/400x300?text=Course+Image";
+            return (
+              <div key={course.id} className="course-card">
+                <div className="course-image">
+                  <img
+                    src={imageUrl}
+                    alt={course.name}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://via.placeholder.com/400x300?text=Course+Image";
+                    }}
+                  />
+                </div>
+                <div className="course-meta">
+                  <h3>{course.name}</h3>
+                  <p>{course.description}</p>
+                  <div className="course-footer">
+                    <span className="duration">12 tuần</span>
+                    <button className="btn-text" onClick={() => navigate(`/course/${course.id}`)}>
+                      {isLogin ? "Tiếp Tục →" : "Xem Chi Tiết →"}
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
+        </div>
 
-          {error && <div className="error-message">{error}</div>}
-          {loading && <div className="loading">Đang tải khóa học...</div>}
-        </section>
+        {error && <div className="error-message">{error}</div>}
+        {loading && <div className="loading">Đang tải khóa học...</div>}
+      </section>
 
       <section className="final-cta">
         <div className="cta-content">

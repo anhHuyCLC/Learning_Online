@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { getCourseById } from '../features/courseSlice';
 import { getProgressForCourse, markLessonAsCompleted } from '../features/progressSlice';
