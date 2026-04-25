@@ -88,8 +88,10 @@ Neu `SHOW TABLES;` tra ve `Empty set` hoac lenh select users bao `Table 'appdb.u
 Neu co file export tu database local, uu tien import file backup do va khong can chay `init_schema.sql`:
 
 ```bash
-cd /home/ubuntu/Learning_Online
-mysql -h YOUR_DB_HOST -u YOUR_DB_USER -p YOUR_DB_NAME < backend/scripts/backup.sql
+USE appdb;
+SOURCE /home/ubuntu/deploy/backend/scripts/backup.sql;
+SHOW TABLES;
+SELECT id, email, role FROM users LIMIT 5;
 ```
 
 File `backend/scripts/backup.sql` hien tai co `DROP TABLE`, `CREATE TABLE` va `INSERT INTO`, nen no se tao lai bang va do du lieu local vao database dang chon. Sau khi import xong, kiem tra:
@@ -231,61 +233,121 @@ Ket qua build nam o:
 ```text
 /home/ubuntu/Learning_Online/frontend/dist
 ```
-
-## 8. Cau hinh Nginx
-
-Tao file config:
-
-```bash
-sudo nano /etc/nginx/sites-available/learning-online
-```
-
-Config mau cho chung mot domain:
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com www.your-domain.com;
-
-    root /home/ubuntu/Learning_Online/frontend/dist;
-    index index.html;
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:3000/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads/ {
-        proxy_pass http://127.0.0.1:3000/uploads/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-Bat site va test Nginx:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/learning-online /etc/nginx/sites-enabled/learning-online
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
 Mo browser test:
 
 ```text
 http://your-domain.com
+```
+
+## 8B. Cau hinh Nginx backend-only
+
+Neu chi deploy backend, khong can cau hinh `root frontend/dist`. Nginx chi can proxy domain ve backend dang chay o port `3000`.
+
+Neu DNS dang tro `@ A YOUR_EC2_PUBLIC_IP`, domain de xin cert la root domain, vi du:
+
+```text
+your-domain.com
+```
+
+Neu muon dung subdomain, vi du `awsv2.your-domain.com`, phai tao record rieng:
+
+```text
+awsv2 A YOUR_EC2_PUBLIC_IP
+```
+
+Tao config Nginx backend-only:
+
+```bash
+sudo nano /etc/nginx/sites-available/learning-online-backend
+```
+
+Noi dung mau, thay `BACKEND_DOMAIN` bang domain that:
+
+```nginx
+server {
+    listen 80;
+    server_name BACKEND_DOMAIN;
+
+    client_max_body_size 20m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Bat site va reload Nginx:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/learning-online-backend /etc/nginx/sites-enabled/learning-online-backend
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Dam bao backend dang chay:
+
+```bash
+cd /home/ubuntu/deploy/backend
+pm2 start "npx tsx app.ts" --name learning-online-backend
+pm2 save
+curl http://localhost:3000/api/courses
+```
+
+Test domain HTTP truoc khi xin cert:
+
+```bash
+curl http://BACKEND_DOMAIN/api/courses
+```
+
+Sau do xin cert:
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d BACKEND_DOMAIN
+```
+
+Kiem tra HTTPS:
+
+```bash
+curl https://BACKEND_DOMAIN/api/courses
+sudo certbot renew --dry-run
+```
+
+Neu gap `502 Bad Gateway`, nghia la Nginx da nhan request nhung backend port `3000` chua tra loi. Debug theo thu tu:
+
+```bash
+pm2 status
+pm2 logs learning-online-backend --lines 100
+curl http://127.0.0.1:3000/api/courses
+sudo ss -tulpn | grep :3000
+```
+
+Neu `curl http://127.0.0.1:3000/api/courses` fail, start lai backend:
+
+```bash
+cd /home/ubuntu/deploy/backend
+npm ci
+npx tsc --noEmit
+pm2 delete learning-online-backend
+pm2 start ./node_modules/.bin/tsx --name learning-online-backend -- app.ts
+pm2 save
+curl http://127.0.0.1:3000/api/courses
+```
+
+Neu backend local OK ma domain van 502, xem log Nginx:
+
+```bash
+sudo nginx -t
+sudo tail -n 100 /var/log/nginx/error.log
+sudo systemctl reload nginx
 ```
 
 ## 9. Cau hinh SSL certificate
