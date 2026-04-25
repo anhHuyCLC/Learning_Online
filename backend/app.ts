@@ -18,18 +18,7 @@ const __dirname = path.resolve();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    if (origin.startsWith('http://localhost:5173') || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // Serve static files from uploads directory
