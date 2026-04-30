@@ -136,6 +136,13 @@ export default function Home() {
                 >
                   📚 Khóa học
                 </button>
+                <button
+                  className="btn-text"
+                  onClick={() => navigate("/recommendations")}
+                  title="Khóa học được đề xuất"
+                >
+                  🎓 Đề Xuất
+                </button>
                 <button className="btn-text" onClick={handleLogout}>
                   Đăng Xuất
                 </button>

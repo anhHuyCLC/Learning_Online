@@ -5,7 +5,11 @@
   "main": "app.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch app.ts"
+    "dev": "tsx watch app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "init:recommendations": "tsx scripts/initializeRecommendationDB.ts",
+    "seed:recommendations": "tsx scripts/seedRecommendationRules.ts"
   },
   "keywords": [],
   "author": "",

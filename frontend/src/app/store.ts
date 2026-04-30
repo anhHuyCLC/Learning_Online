@@ -11,6 +11,7 @@ import quizReducer from "../features/quizSlice";
 import progressReducer from "../features/progressSlice";
 import adminReducer from "../features/adminSlice";
 import teacherReducer from "../features/teacherSlice";
+import recommendationReducer from "../features/recommendationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -21,6 +22,7 @@ export const store = configureStore({
     progress: progressReducer,
     admin: adminReducer,
     teacher: teacherReducer,
+    recommendations: recommendationReducer,
   },
 });
 

@@ -7,6 +7,7 @@ const AdminLayout = () => {
     { name: "Kiểm duyệt khóa học", path: "/admin/courses", icon: "📚" },
     { name: "Danh mục", path: "/admin/categories", icon: "📑" },
     { name: "Giao dịch", path: "/admin/transactions", icon: "💳" },
+    { name: "Quy Tắc AI", path: "/admin/recommendations/rules", icon: "🤖" },
   ];
   return <DashboardLayout roleName="Admin" logoLetter="A" navLinks={links} />;
 };

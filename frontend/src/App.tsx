@@ -11,6 +11,8 @@ import LessonPage from "./pages/LessonPage.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import TeacherLayout from "./components/TeacherLayout.tsx";
 import AdminLayout from "./components/AdminLayout.tsx";
+import RecommendationsPage from "./pages/RecommendationsPage.tsx";
+import AdminRecommendationsRules from "./pages/AdminRecommendationsRules.tsx";
 
 import "./styles/vars.css";
 import "./styles/home.css";
@@ -55,6 +57,7 @@ function App() {
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/quiz/lesson/:lessonId" element={<QuizPage />} />
           <Route path="/top-up" element={<TopUpPage />} />
+          <Route path="/recommendations" element={<RecommendationsPage />} />
           
         </Route>
 
@@ -83,6 +86,7 @@ function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/transactions" element={<AdminTransactions />} />
+            <Route path="/admin/recommendations/rules" element={<AdminRecommendationsRules />} />
             
           </Route>
         </Route>

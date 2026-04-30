@@ -6,6 +6,7 @@ import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
 import './../styles/quiz.css';
 import type { Question, QuestionOption } from '../features/quizSlice';
+
 const QuizPage: React.FC = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
@@ -17,7 +18,6 @@ const QuizPage: React.FC = () => {
     if (lessonId) {
       dispatch(fetchQuizByLessonId(parseInt(lessonId, 10)));
     }
-    // Reset quiz state on component unmount
     return () => {
       dispatch(resetQuiz());
     };
@@ -50,35 +50,102 @@ const QuizPage: React.FC = () => {
   }
 
   if (result) {
+    const totalScore = result.score.toFixed(0);
     return (
       <div className="quiz-container">
-        <h2>Quiz Results</h2>
-        <p className="quiz-score">Your score: {result.score.toFixed(2)}%</p>
-        <div className="quiz-feedback">
-          <h3>Correct Answers:</h3>
-          {quiz?.questions?.map((question: Question) => (
-            <div key={question.id} className="question-result">
-              <p><strong>{question.content}</strong></p>
-              <ul>
-                {question?.options?.map((option: QuestionOption) => (
-                  <li
-                    key={option.id}
-                    className={
-                      result.correctAnswers[question.id] === option.id
-                        ? 'correct'
-                        : selectedAnswers[question.id] === option.id
-                        ? 'incorrect'
-                        : ''
-                    }
-                  >
-                    {option.content}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <h2>📊 Kết quả bài quiz</h2>
+        <div className="quiz-score">
+          {totalScore}%
         </div>
-        <button onClick={() => navigate(-1)}>Back to Lesson</button>
+        <div style={{
+          textAlign: 'center',
+          fontSize: 'var(--fs-base)',
+          color: 'var(--text-muted)',
+          marginBottom: 'var(--g-xx)'
+        }}>
+          {result.score >= 70 ? '🎉 Chúc mừng! Bạn đã vượt qua bài quiz!' : '📚 Hãy ôn lại nội dung và thử lại!'}
+        </div>
+        
+        <div className="quiz-feedback">
+          {quiz?.questions?.map((question: Question, idx: number) => {
+            const isCorrect = result.correctAnswers[question.id] === selectedAnswers[question.id];
+            return (
+              <div key={question.id} className={`question-result ${isCorrect ? 'correct' : 'incorrect'}`}>
+                <h4>Câu {idx + 1}: {question.content}</h4>
+                <ul>
+                  {question?.options?.map((option: QuestionOption) => {
+                    const isCorrectAnswer = result.correctAnswers[question.id] === option.id;
+                    const isUserSelected = selectedAnswers[question.id] === option.id;
+                    
+                    return (
+                      <li
+                        key={option.id}
+                        className={
+                          isCorrectAnswer
+                            ? 'correct'
+                            : isUserSelected && !isCorrectAnswer
+                            ? 'incorrect'
+                            : ''
+                        }
+                      >
+                        {option.content}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', gap: 'var(--g-x)', justifyContent: 'center', marginTop: 'var(--g-xx)' }}>
+          <button 
+            onClick={() => navigate(-1)}
+            style={{
+              padding: '12px 24px',
+              background: 'var(--surface)',
+              color: 'var(--text-main)',
+              border: '2px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all var(--trans) var(--ease)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--primary)';
+              e.currentTarget.style.color = 'var(--primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--text-main)';
+            }}
+          >
+            ← Quay lại
+          </button>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '12px 24px',
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              border: '2px solid var(--primary)',
+              borderRadius: 'var(--radius-md)',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all var(--trans) var(--ease)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--primary)';
+              e.currentTarget.style.color = 'white';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--primary-light)';
+              e.currentTarget.style.color = 'var(--primary)';
+            }}
+          >
+            🔄 Làm lại
+          </button>
+        </div>
       </div>
     );
   }
@@ -87,22 +154,25 @@ const QuizPage: React.FC = () => {
     <div className="quiz-container">
       {quiz ? (
         <>
-          <h2>{quiz.title}</h2>
+          <h2>📝 {quiz.title}</h2>
           <form>
-            {quiz?.questions?.map((question: Question) => (
+            {quiz?.questions?.map((question: Question, qIndex: number) => (
               <div key={question.id} className="question-block">
-                <p><strong>{question.content}</strong></p>
+                <div className="question-block-number">{qIndex + 1}</div>
+                <h3 className="question-text">{question.content}</h3>
+                
                 <ul className="options-list">
                   {question?.options?.map((option: QuestionOption) => (
                     <li key={option.id}>
-                      <label>
-                        <input
-                          type="radio"
-                          name={`question-${question.id}`}
-                          value={option.id}
-                          onChange={() => handleOptionChange(question.id, option.id)}
-                          checked={selectedAnswers[question.id] === option.id}
-                        />
+                      <input
+                        type="radio"
+                        id={`option-${option.id}`}
+                        name={`question-${question.id}`}
+                        value={option.id}
+                        onChange={() => handleOptionChange(question.id, option.id)}
+                        checked={selectedAnswers[question.id] === option.id}
+                      />
+                      <label htmlFor={`option-${option.id}`}>
                         {option.content}
                       </label>
                     </li>
@@ -110,13 +180,19 @@ const QuizPage: React.FC = () => {
                 </ul>
               </div>
             ))}
-            <button type="button" onClick={handleSubmit} disabled={Object.keys(selectedAnswers).length !== quiz.questions?.length}>
-              Submit Quiz
+            
+            <button 
+              className="quiz-submit-btn"
+              type="button" 
+              onClick={handleSubmit} 
+              disabled={Object.keys(selectedAnswers).length !== quiz.questions?.length}
+            >
+              ✓ Nộp bài {Object.keys(selectedAnswers).length}/{quiz.questions?.length}
             </button>
           </form>
         </>
       ) : (
-        <p>No quiz available for this lesson.</p>
+        <p>Không có bài quiz cho bài học này.</p>
       )}
     </div>
   );

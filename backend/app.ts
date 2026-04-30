@@ -11,6 +11,7 @@ import lessonProgressRoutes from "./routes/lessonProgressRoutes";
 import teacherRoutes from "./routes/teacherRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
+import recommendationRoutes from "./routes/recommendationRoutes";
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use("/api", enrollmentRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use('/api/progress', lessonProgressRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 // Protected dashboard routes
 app.use("/api/teacher", teacherRoutes);

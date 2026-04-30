@@ -1,0 +1,211 @@
+/* User Segment Card Styles */
+/* File: frontend/src/styles/userSegmentCard.css */
+
+.user-segment-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.user-segment-card.loading {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.user-segment-card.empty {
+  background: #fff3cd;
+  color: #856404;
+  text-align: center;
+}
+
+.skeleton-line {
+  height: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.2) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Segment Header */
+.segment-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.segment-icon {
+  font-size: 48px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.segment-info {
+  flex: 1;
+}
+
+.segment-title {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.segment-description {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.95;
+  line-height: 1.4;
+}
+
+/* Weights Section */
+.segment-weights {
+  margin-bottom: 20px;
+}
+
+.weights-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.weights-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.weight-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.weight-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.weight-bar-container {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.weight-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.weight-value {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* Info Box */
+.segment-info-box {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.info-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.95;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-segment-card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .segment-header {
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+  }
+
+  .segment-icon {
+    font-size: 40px;
+  }
+
+  .segment-title {
+    font-size: 20px;
+  }
+
+  .segment-description {
+    font-size: 13px;
+  }
+
+  .weights-container {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+  }
+
+  .weight-item {
+    padding: 10px;
+  }
+
+  .weight-label {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-segment-card {
+    padding: 12px;
+  }
+
+  .segment-header {
+    gap: 10px;
+  }
+
+  .segment-icon {
+    font-size: 32px;
+  }
+
+  .segment-title {
+    font-size: 18px;
+  }
+
+  .segment-description {
+    font-size: 12px;
+  }
+
+  .weights-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-text {
+    font-size: 11px;
+  }
+}
