@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../types/index';
 import { recommendationService } from '../services/AdvancedRecommendationService';
 import db from '../config/db';
+import { HybridRecommendationEngine } from '../services/recommendation/hybridScoring.service';
+import { FeatureExtractionService } from '../services/recommendation/featureExtraction.service';
 
 export const generateRecommendations = async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -13,33 +15,61 @@ export const generateRecommendations = async (req: AuthenticatedRequest, res: Re
 
     console.log(`Generating recommendations for user ${userId}`);
     
-    const recommendations = await recommendationService.generateLearningPath(userId);
+    // Sử dụng Hybrid Engine mới
+    const hybridEngine = new HybridRecommendationEngine();
+    const recommendations = await hybridEngine.generateRecommendations(userId, 10);
+
+    // Bổ sung thêm thông tin chi tiết khóa học từ DB để trả về cho Frontend
+    const connection = await db();
+    const courseIds = recommendations.map(r => r.courseId);
+    let courseDetails: any[] = [];
+    
+    if (courseIds.length > 0) {
+      const placeholders = courseIds.map(() => '?').join(',');
+      const [rows]: any = await connection.execute(`SELECT * FROM courses WHERE id IN (${placeholders})`, courseIds);
+      courseDetails = rows;
+    }
 
     res.status(200).json({
       success: true,
       data: {
         userId,
-        recommendations: recommendations.map(rec => ({
-          courseId: rec.course.id,
-          courseTitle: rec.course.title || (rec.course as any).name || 'Khóa học',
-          courseDescription: rec.course.description,
-          difficulty: rec.course.difficulty || 'beginner',
-          duration: rec.course.duration || 0,
-          price: rec.course.price || 0,
-          rating: rec.course.rating || 5,
-          enrollmentCount: rec.course.enrollmentCount || 0,
-          recommendationScore: rec.score.final,
-          scoreBreakdown: {
-            relevance: rec.score.relevance,
-            difficulty: rec.score.difficulty,
-            performance: rec.score.performance,
-            engagement: rec.score.engagement,
-            progression: rec.score.progression,
-            popularity: rec.score.popularity,
-            freshness: rec.score.freshness
-          },
-          reason: rec.reason
-        })),
+        recommendations: recommendations.map(rec => {
+          const detail = courseDetails.find(c => c.id === rec.courseId) || {};
+          
+          // Đảm bảo difficulty trả về Frontend luôn là chuỗi (string)
+          let mappedDifficulty = 'beginner';
+          const rawDiff = detail.difficulty || 2;
+          if (typeof rawDiff === 'number' || !isNaN(Number(rawDiff))) {
+            const numDiff = Number(rawDiff);
+            if (numDiff >= 4) mappedDifficulty = 'advanced';
+            else if (numDiff >= 3) mappedDifficulty = 'intermediate';
+          } else if (typeof rawDiff === 'string') {
+            mappedDifficulty = rawDiff;
+          }
+
+          return {
+            courseId: rec.courseId,
+            courseTitle: detail.title || detail.name || rec.courseName,
+            courseDescription: detail.description || '',
+            difficulty: mappedDifficulty,
+            duration: detail.duration_hours || detail.duration || 0,
+            enrollmentCount: detail.enrollment_count || detail.enrollmentCount || 0,
+            price: detail.price != null ? Number(detail.price) : 0,
+            rating: detail.rating || 5,
+            recommendationScore: rec.finalScore,
+            scoreBreakdown: {
+              relevance: rec.scoreBreakdown?.relevance || 0,
+              difficulty: rec.scoreBreakdown?.difficultyMatch || 0,
+              performance: rec.scoreBreakdown?.performancePotential || 0,
+              engagement: rec.scoreBreakdown?.engagementFactor || 0,
+              popularity: rec.scoreBreakdown?.popularityProof || 0,
+              progression: 0,
+              freshness: 0
+            },
+            reasons: rec.reasons
+          };
+        }),
         generatedAt: new Date()
       }
     });
@@ -50,6 +80,21 @@ export const generateRecommendations = async (req: AuthenticatedRequest, res: Re
       error: 'Failed to generate recommendations',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+};
+
+// NEW: API để chạy trích xuất đặc trưng ML thủ công
+export const runFeatureExtraction = async (req: Request, res: Response) => {
+  try {
+    const service = new FeatureExtractionService();
+    await service.runExtraction();
+    res.status(200).json({
+      success: true,
+      message: 'Trích xuất đặc trưng ML thành công! CSDL đã được cập nhật.'
+    });
+  } catch (error) {
+    console.error('Error extracting features:', error);
+    res.status(500).json({ success: false, error: 'Failed to extract features' });
   }
 };
 
@@ -91,10 +136,20 @@ export const getRecommendations = async (req: Request, res: Response) => {
           courseTitle: rec.title || rec.name,
           courseDescription: rec.description,
           difficulty: rec.difficulty || 'beginner',
-          price: rec.price || 0,
+          duration: rec.duration_hours || rec.duration || 0,
+          enrollmentCount: rec.enrollment_count || rec.enrollmentCount || 0,
+          price: rec.price != null ? Number(rec.price) : 0,
           rating: rec.rating || 5,
           recommendationScore: rec.recommendation_score,
-          scoreBreakdown: rec.component_scores,
+          scoreBreakdown: {
+            relevance: rec.component_scores?.relevance || 0,
+            difficulty: rec.component_scores?.difficultyMatch || rec.component_scores?.difficulty || 0,
+            performance: rec.component_scores?.performancePotential || rec.component_scores?.performance || 0,
+            engagement: rec.component_scores?.engagementFactor || rec.component_scores?.engagement || 0,
+            popularity: rec.component_scores?.popularityProof || rec.component_scores?.popularity || 0,
+            progression: rec.component_scores?.progression || 0,
+            freshness: rec.component_scores?.freshness || 0
+          },
           recommendedAt: rec.recommended_at
         })),
         count: recommendations.length
