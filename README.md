@@ -62,7 +62,7 @@
 - MySQL Server đang chạy
 
 ### Bước 1: Cài đặt Database
-1. Tạo một database mới trong MySQL (VD: `lms_database`).
+1. Tạo một database mới trong MySQL (`lms_online_learning`).
 2. Chạy file migrate để tạo các bảng liên quan đến hệ thống (đặc biệt là hệ thống gợi ý):
 ```bash
 cd backend
@@ -143,5 +143,5 @@ Dự án sử dụng Sepay để lắng nghe giao dịch chuyển khoản. Khi c
 
 ## ✍️ Tác giả
 
-- Được phát triển và thiết kế bởi **[Tên của bạn - Trịnh Duy Huy]**.
-- Đồ án Khóa Luận Tốt Nghiệp - Năm 2024/2025.
+- Được phát triển và thiết kế bởi **[Trịnh Duy Huy]**.
+- Đồ án Khóa Luận Tốt Nghiệp - Năm 2025/2026.
