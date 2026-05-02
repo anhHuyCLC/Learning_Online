@@ -54,25 +54,47 @@ export default function RecommendationsPage() {
   }, [dispatch, userSegment]);
 
   const sortedRecommendations = [...recommendations].sort((a, b) => {
+    // Determine exact score field mapping depending on backend
+    const scoreA = a.recommendationScore || (a as any).finalScore || 0;
+    const scoreB = b.recommendationScore || (b as any).finalScore || 0;
+
+    let breakdownA: any = {};
+    let breakdownB: any = {};
+    
+    // Quét đúng tên cột từ Database
+    const rawScoresA = a.scoreBreakdown || (a as any).mlScoreFactors || (a as any).ml_score_factors || (a as any).component_scores || (a as any).componentScores || {};
+    const rawScoresB = b.scoreBreakdown || (b as any).mlScoreFactors || (b as any).ml_score_factors || (b as any).component_scores || (b as any).componentScores || {};
+
+    try {
+      let parsedA = typeof rawScoresA === 'string' ? JSON.parse(rawScoresA) : rawScoresA;
+      if (typeof parsedA === 'string') parsedA = JSON.parse(parsedA);
+      breakdownA = parsedA || {};
+
+      let parsedB = typeof rawScoresB === 'string' ? JSON.parse(rawScoresB) : rawScoresB;
+      if (typeof parsedB === 'string') parsedB = JSON.parse(parsedB);
+      breakdownB = parsedB || {};
+    } catch(e) {}
+
     switch (sortBy) {
       case 'score':
-        return b.recommendationScore - a.recommendationScore;
+        return scoreB - scoreA;
       case 'relevance':
-        return (b.scoreBreakdown?.relevance ?? 0) - (a.scoreBreakdown?.relevance ?? 0);
+        // Hỗ trợ cả 2 chuẩn tên biến cũ và mới để sắp xếp
+        const relA = breakdownA.relevance || breakdownA.Relevance || 0;
+        const relB = breakdownB.relevance || breakdownB.Relevance || 0;
+        return relB - relA;
       case 'difficulty':
-        const diffOrder = { 'Beginner': 0, 'Intermediate': 1, 'Advanced': 2 };
-        return (diffOrder[a.difficulty as keyof typeof diffOrder] || 0) -
-          (diffOrder[b.difficulty as keyof typeof diffOrder] || 0);
+        return (a.difficulty || '').localeCompare(b.difficulty || '');
       default:
         return 0;
     }
   });
 
-  // Filter by difficulty
+  // Filter by difficulty safely
   const filteredRecommendations = filterDifficulty === 'all'
     ? sortedRecommendations
     : sortedRecommendations.filter(
-      (course) => course.difficulty.toLowerCase() === filterDifficulty.toLowerCase()
+      (course) => (course.difficulty || '').toLowerCase() === filterDifficulty.toLowerCase()
     );
 
   const handleRefresh = () => {
@@ -91,6 +113,16 @@ export default function RecommendationsPage() {
     navigate(`/course/${courseId}`);
   };
 
+  // Safely parse segmentWeights if it's a string
+  let parsedWeights = {};
+  if (segmentWeights) {
+    try {
+      parsedWeights = typeof segmentWeights === 'string' ? JSON.parse(segmentWeights) : segmentWeights;
+    } catch (e) {
+      parsedWeights = {};
+    }
+  }
+
   if (!user) {
     return <div className="page-container"><Loading /></div>;
   }
@@ -99,26 +131,28 @@ export default function RecommendationsPage() {
     <div className="recommendations-page">
       <Header title="Đề Xuất" />
 
-      <div className="page-container">
+      <div className="page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
         {/* Page Header */}
-        <div className="page-header">
+        <div className="page-header" style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
           <div className="header-content">
-            <h1>🎓 Khóa Học Được Đề Xuất Cho Bạn</h1>
-            <p className="header-subtitle">
+            <h1 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', color: '#1e293b' }}>🎓 Khóa Học Được Đề Xuất Cho Bạn</h1>
+            <p className="header-subtitle" style={{ margin: 0, color: '#64748b' }}>
               Các khóa học được cá nhân hóa dựa trên hành vi, mục tiêu và tiến độ học tập của bạn
             </p>
           </div>
-          <div className="header-actions">
+          <div className="header-actions" style={{ display: 'flex', gap: '12px' }}>
             <button
               className="btn btn-primary"
               onClick={handleRefresh}
               disabled={isLoading}
+              style={{ background: '#4f46e5', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
             >
               {isLoading ? '⏳ Đang tải...' : '🔄 Làm Mới'}
             </button>
             <button
               className="btn btn-secondary"
               onClick={handleViewAnalytics}
+              style={{ background: 'white', color: '#4f46e5', border: '1px solid #4f46e5', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
             >
               {showAnalytics ? '📊 Ẩn Thống Kê' : '📊 Xem Thống Kê'}
             </button>
@@ -133,23 +167,23 @@ export default function RecommendationsPage() {
           />
         )}
 
-        {/* User Segment Card */}
+        {/* User Segment Card - FIXED SPACING BUG */}
         <div className="segment-section">
-          <div className="analytics-card" style={{ marginBottom: '24px' }}>
-            <h3>🎯 Trọng Số Yếu Tố ({userSegment || 'Chưa phân loại'})</h3>
+          <div className="analytics-card" style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: '#334155' }}>🎯 Trọng Số Yếu Tố ({userSegment || 'Chưa phân loại'})</h3>
             {isLoading ? (
               <Loading />
-            ) : segmentWeights ? (
-              <div className="analytics-grid" style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                {Object.entries(segmentWeights).map(([key, value]) => {
+            ) : Object.keys(parsedWeights).length > 0 ? (
+              <div className="analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                {Object.entries(parsedWeights).map(([key, value]) => {
                   const percentage = Math.round((value as number) * 100);
                   return (
                     <div key={key} className="analytics-item" style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span className="analytics-label" style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{key}</span>
-                        <span className="analytics-value" style={{ fontSize: '14px', color: '#3b82f6' }}>{percentage}%</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '8px' }}>
+                        <span className="analytics-label" style={{ textTransform: 'capitalize', fontWeight: '500', color: '#475569', fontSize: '0.875rem' }}>{key}:</span>
+                        <span className="analytics-value" style={{ fontSize: '0.875rem', fontWeight: 'bold', color: '#3b82f6' }}>{percentage}%</span>
                       </div>
-                      <div style={{ width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '8px' }}>
+                      <div style={{ width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '6px' }}>
                         <div 
                           style={{ 
                             width: `${percentage}%`, 
@@ -170,68 +204,16 @@ export default function RecommendationsPage() {
           </div>
         </div>
 
-        {/* Analytics Section */}
-        {showAnalytics && analytics && (
-          <div className="analytics-section">
-            <div className="analytics-card">
-              <h3>📈 Thống Kê Hiệu Suất</h3>
-
-              <div className="analytics-grid">
-                <div className="analytics-item">
-                  <span className="analytics-label">Tổng Đề Xuất:</span>
-                  <span className="analytics-value">
-                    {analytics.overview?.totalRecommendations || 0}
-                  </span>
-                </div>
-                <div className="analytics-item">
-                  <span className="analytics-label">Tỷ Lệ Click:</span>
-                  <span className="analytics-value">
-                    {analytics.overview?.clickThroughRate || '0%'}
-                  </span>
-                </div>
-                <div className="analytics-item">
-                  <span className="analytics-label">Tỷ Lệ Chuyển Đổi:</span>
-                  <span className="analytics-value">
-                    {analytics.overview?.conversionRate || '0%'}
-                  </span>
-                </div>
-                <div className="analytics-item">
-                  <span className="analytics-label">Thời Gian Thực Thi:</span>
-                  <span className="analytics-value">
-                    {analytics.systemPerformance?.avgExecutionTime?.toFixed(0) || 0}ms
-                  </span>
-                </div>
-              </div>
-
-              {analytics.topRecommendedCourses && analytics.topRecommendedCourses.length > 0 && (
-                <div className="top-courses">
-                  <h4>🏆 Khóa Học Được Đề Xuất Hàng Đầu</h4>
-                  <div className="top-courses-list">
-                    {analytics.topRecommendedCourses.slice(0, 5).map((course: any, index: number) => (
-                      <div key={course.courseId} className="top-course-item">
-                        <span className="rank">#{index + 1}</span>
-                        <span className="title">{course.title}</span>
-                        <span className="stats">
-                          {course.recommendmentCount} đề xuất, {course.clicks} clicks
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Controls Section */}
-        <div className="controls-section">
-          <div className="sort-control">
-            <label htmlFor="sort-select">Sắp Xếp Theo:</label>
+        <div className="controls-section" style={{ display: 'flex', gap: '20px', alignItems: 'center', background: 'white', padding: '16px 24px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <div className="sort-control" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label htmlFor="sort-select" style={{ color: '#64748b', fontSize: '0.875rem' }}>Sắp Xếp Theo:</label>
             <select
               id="sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               className="sort-select"
+              style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
             >
               <option value="score">Điểm Đề Xuất (Cao Nhất)</option>
               <option value="relevance">Độ Liên Quan (Cao Nhất)</option>
@@ -239,13 +221,14 @@ export default function RecommendationsPage() {
             </select>
           </div>
 
-          <div className="filter-control">
-            <label htmlFor="difficulty-select">Độ Khó:</label>
+          <div className="filter-control" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label htmlFor="difficulty-select" style={{ color: '#64748b', fontSize: '0.875rem' }}>Độ Khó:</label>
             <select
               id="difficulty-select"
               value={filterDifficulty}
               onChange={(e) => setFilterDifficulty(e.target.value)}
               className="difficulty-select"
+              style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
             >
               <option value="all">Tất Cả</option>
               <option value="beginner">Cơ Bản</option>
@@ -254,7 +237,7 @@ export default function RecommendationsPage() {
             </select>
           </div>
 
-          <div className="result-info">
+          <div className="result-info" style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: '0.875rem' }}>
             Hiển thị {filteredRecommendations.length} khóa học được đề xuất
           </div>
         </div>
@@ -269,7 +252,7 @@ export default function RecommendationsPage() {
           <div className="recommendations-grid">
             {filteredRecommendations.map((course, index) => (
               <RecommendationCard
-                key={course.courseId}
+                key={course.courseId || index}
                 course={course}
                 rank={index + 1}
                 onCourseClick={handleCourseClick}
@@ -280,10 +263,10 @@ export default function RecommendationsPage() {
 
         {/* Empty State */}
         {!isLoading && filteredRecommendations.length === 0 && (
-          <div className="empty-state">
-            <p className="empty-icon">🎯</p>
-            <h3>Không Có Khóa Học Được Đề Xuất</h3>
-            <p>
+          <div className="empty-state" style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '12px' }}>
+            <p className="empty-icon" style={{ fontSize: '3rem', margin: '0 0 16px 0' }}>🎯</p>
+            <h3 style={{ color: '#1e293b', marginBottom: '8px' }}>Không Có Khóa Học Được Đề Xuất</h3>
+            <p style={{ color: '#64748b', marginBottom: '24px' }}>
               {recommendations.length === 0
                 ? 'Hãy hoàn thành một số khóa học để nhận được những đề xuất tốt hơn.'
                 : 'Không tìm thấy khóa học phù hợp với bộ lọc của bạn.'}
@@ -291,6 +274,7 @@ export default function RecommendationsPage() {
             <button
               className="btn btn-primary"
               onClick={() => navigate('/course')}
+              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: '500', cursor: 'pointer' }}
             >
               🔍 Khám Phá Khóa Học
             </button>
@@ -299,7 +283,7 @@ export default function RecommendationsPage() {
 
         {/* Last Updated Info */}
         {lastGeneratedAt && (
-          <div className="footer-info">
+          <div className="footer-info" style={{ textAlign: 'center', marginTop: '24px', color: '#94a3b8' }}>
             <small>
               Lần cập nhật cuối cùng: {new Date(lastGeneratedAt).toLocaleString('vi-VN')}
             </small>

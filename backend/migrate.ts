@@ -7,11 +7,8 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function runMigration() {
   let connection;
@@ -29,7 +26,7 @@ async function runMigration() {
     console.log('✅ Connected to database:', process.env.DB_NAME);
 
     // Read SQL file
-    const sqlPath = path.join(__dirname, 'scripts', 'create_recommendation_tables.sql');
+    const sqlPath = path.join(process.cwd(), 'scripts', 'create_recommendation_tables.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
 
     console.log('📝 Executing SQL migration...');
@@ -71,7 +68,7 @@ async function runMigration() {
     const [tables]: any = await connection.execute(`
       SELECT COUNT(*) as table_count FROM information_schema.tables 
       WHERE table_schema = ? AND table_name LIKE '%recommendation%'
-    `, [process.env.DB_NAME]);
+    `, [process.env.DB_NAME || '']);
 
     console.log(`\n✅ Verification: ${tables[0].table_count} recommendation tables found`);
 

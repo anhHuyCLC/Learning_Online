@@ -5,6 +5,53 @@ import db from '../config/db';
 import { HybridRecommendationEngine } from '../services/recommendation/hybridScoring.service';
 import { FeatureExtractionService } from '../services/recommendation/featureExtraction.service';
 
+// Hàm hỗ trợ parse điểm số an toàn từ mọi định dạng JSON hoặc mảng của Backend
+const parseScoreBreakdown = (rawBreakdown: any) => {
+  let safeBreakdown: any = {};
+  
+  // Parse nếu dữ liệu là String (dễ gặp khi lấy từ CSDL MySQL)
+  if (typeof rawBreakdown === 'string') {
+    try { rawBreakdown = JSON.parse(rawBreakdown); } catch(e) {}
+    // Đề phòng trường hợp stringify 2 lần
+    if (typeof rawBreakdown === 'string') {
+      try { rawBreakdown = JSON.parse(rawBreakdown); } catch(e) {}
+    }
+  }
+
+  // Quét điểm số nếu nó là Mảng thay vì Object
+  if (Array.isArray(rawBreakdown)) {
+    rawBreakdown.forEach((item: any) => {
+      const k = item.name || item.key || item.factor || item.metric;
+      const v = item.value !== undefined ? item.value : item.score;
+      if (k) safeBreakdown[k.toLowerCase()] = v;
+    });
+  } else if (rawBreakdown && typeof rawBreakdown === 'object') {
+    safeBreakdown = rawBreakdown;
+  }
+
+  // Tìm key bất chấp viết hoa/thường
+  const getValue = (keys: string[]) => {
+    for (const k of keys) {
+      if (safeBreakdown[k] !== undefined) return safeBreakdown[k];
+      const lower = k.toLowerCase();
+      if (safeBreakdown[lower] !== undefined) return safeBreakdown[lower];
+      const title = lower.charAt(0).toUpperCase() + lower.slice(1);
+      if (safeBreakdown[title] !== undefined) return safeBreakdown[title];
+    }
+    return 0;
+  };
+
+  return {
+    relevance: getValue(['relevance']),
+    difficulty: getValue(['difficultyMatch', 'difficulty']),
+    performance: getValue(['performancePotential', 'performance']),
+    engagement: getValue(['engagementFactor', 'engagement']),
+    popularity: getValue(['popularityProof', 'popularity']),
+    progression: getValue(['progression']),
+    freshness: getValue(['freshness'])
+  };
+};
+
 export const generateRecommendations = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -58,15 +105,7 @@ export const generateRecommendations = async (req: AuthenticatedRequest, res: Re
             price: detail.price != null ? Number(detail.price) : 0,
             rating: detail.rating || 5,
             recommendationScore: rec.finalScore,
-            scoreBreakdown: {
-              relevance: rec.scoreBreakdown?.relevance || 0,
-              difficulty: rec.scoreBreakdown?.difficultyMatch || 0,
-              performance: rec.scoreBreakdown?.performancePotential || 0,
-              engagement: rec.scoreBreakdown?.engagementFactor || 0,
-              popularity: rec.scoreBreakdown?.popularityProof || 0,
-              progression: 0,
-              freshness: 0
-            },
+            scoreBreakdown: parseScoreBreakdown(rec.scoreBreakdown || (rec as any).component_scores || {}),
             reasons: rec.reasons
           };
         }),
@@ -141,15 +180,7 @@ export const getRecommendations = async (req: Request, res: Response) => {
           price: rec.price != null ? Number(rec.price) : 0,
           rating: rec.rating || 5,
           recommendationScore: rec.recommendation_score,
-          scoreBreakdown: {
-            relevance: rec.component_scores?.relevance || 0,
-            difficulty: rec.component_scores?.difficultyMatch || rec.component_scores?.difficulty || 0,
-            performance: rec.component_scores?.performancePotential || rec.component_scores?.performance || 0,
-            engagement: rec.component_scores?.engagementFactor || rec.component_scores?.engagement || 0,
-            popularity: rec.component_scores?.popularityProof || rec.component_scores?.popularity || 0,
-            progression: rec.component_scores?.progression || 0,
-            freshness: rec.component_scores?.freshness || 0
-          },
+          scoreBreakdown: parseScoreBreakdown(rec.component_scores || rec.scoreBreakdown || {}),
           recommendedAt: rec.recommended_at
         })),
         count: recommendations.length
