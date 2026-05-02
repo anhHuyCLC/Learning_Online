@@ -3,7 +3,7 @@ import connectDB from '../config/db';
 import { PoolConnection } from 'mysql2/promise';
 
 interface AuthRequest extends Request {
-    user?: { id: number };
+    user?: { id: number; email: string; role: string };
 }
 
 export const createTopUpTransaction = async (req: AuthRequest, res: Response) => {
@@ -107,7 +107,7 @@ export const sepayWebhook = async (req: Request, res: Response) => {
         return res.status(401).send('Unauthorized');
     }
 
-    const connection = await connectDB() as PoolConnection;
+    const connection = (await connectDB()) as unknown as PoolConnection;
 
     try {
         const { transferAmount, content } = req.body;

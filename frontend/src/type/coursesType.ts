@@ -13,6 +13,7 @@ export type Courses = {
   price: number;
   title: string;
   image: string;
+  duration: number;
   teacher_name: string;
   description: string;
   detail_description?: string;

@@ -18,7 +18,7 @@ export default function CourseDetail() {
     const enrollment = enrollmentData[courseId];
     const isUserEnrolled = isEnrolled[courseId] || false;
     const [enrollError, setEnrollError] = useState<string | null>(null);
-    const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
+    const API_URL = "http://localhost:3000";
 
     useEffect(() => {
         if (id) {
@@ -140,12 +140,19 @@ export default function CourseDetail() {
                     <h1 className="course-detail-title">{course.title}</h1>
 
                     <div className="course-detail-meta">
-                        <div className="meta-item">
-                            <span className="meta-label">Instructor:</span>
-                            <span className="meta-value">{course.teacher_name}</span>
+                        <div className="meta-instructor">
+                            <img 
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${course.teacher_name}`} 
+                                alt={course.teacher_name} 
+                                className="instructor-avatar" 
+                            />
+                            <div className="instructor-info">
+                                <span className="instructor-label">Giảng viên</span>
+                                <span className="instructor-name">{course.teacher_name || 'N/A'}</span>
+                            </div>
                         </div>
-                        <div className="meta-item">
-                            <span className="meta-label">Price:</span>
+                        <div className="meta-price-section">
+                            <span className="price-label">Học phí:</span>
                             <span className="meta-price">
                                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}
                             </span>
@@ -154,7 +161,9 @@ export default function CourseDetail() {
 
                     <div className="course-detail-description">
                         <h3>Mô Tả Chi Tiết</h3>
-                        <p>{course.detail_description || course.description}</p>
+                        {(course.detail_description || course.description || '').split('\n').filter(line => line.trim() !== '').map((line, idx) => (
+                            <p key={idx}>{line}</p>
+                        ))}
                     </div>
 
                     {enrollError && (
@@ -176,35 +185,39 @@ export default function CourseDetail() {
                         {isUserEnrolled ? (
                             enrollment?.status === 'completed' ? (
                                 <button
-                                    className="course-detail-btn"
+                                    className="course-detail-btn primary-btn"
                                     onClick={handleReEnroll}
                                     disabled={enrollmentLoading}
                                 >
-                                    {enrollmentLoading ? "Đang xử lý..." : "Ghi danh lại"}
+                                    <span className="btn-icon">↻</span>
+                                    {enrollmentLoading ? "Đang xử lý..." : "Học lại"}
                                 </button>
                             ) : (
                                 <>
                                     <button
-                                        className="course-detail-btn view-course-btn"
+                                        className="course-detail-btn primary-btn"
                                         onClick={() => navigate(`/courses/${courseId}/learn`)}
                                     >
+                                        <span className="btn-icon">▶</span>
                                         Vào học
                                     </button>
                                     <button
-                                        className="course-detail-btn unenroll-btn"
+                                        className="course-detail-btn secondary-btn"
                                         onClick={handleUnenroll}
                                         disabled={enrollmentLoading}
                                     >
+                                        <span className="btn-icon">✕</span>
                                         {enrollmentLoading ? "Đang xử lý..." : "Hủy Đăng Ký"}
                                     </button>
                                 </>
                             )
                         ) : (
                             <button
-                                className="course-detail-btn"
+                                className="course-detail-btn primary-btn"
                                 onClick={handleEnroll}
                                 disabled={enrollmentLoading}
                             >
+                                <span className="btn-icon">▶</span>
                                 {enrollmentLoading ? "Đang xử lý..." : "Đăng Ký Ngay"}
                             </button>
                         )}

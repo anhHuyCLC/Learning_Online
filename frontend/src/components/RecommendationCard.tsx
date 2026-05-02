@@ -52,13 +52,13 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
   };
 
   const scoreFactors = [
-    { name: 'Relevance', value: course.scoreBreakdown.relevance, icon: '🎯' },
-    { name: 'Difficulty', value: course.scoreBreakdown.difficulty, icon: '📈' },
-    { name: 'Performance', value: course.scoreBreakdown.performance, icon: '⚡' },
-    { name: 'Engagement', value: course.scoreBreakdown.engagement, icon: '👥' },
-    { name: 'Progression', value: course.scoreBreakdown.progression, icon: '📊' },
-    { name: 'Popularity', value: course.scoreBreakdown.popularity, icon: '⭐' },
-    { name: 'Freshness', value: course.scoreBreakdown.freshness, icon: '✨' }
+    { name: 'Relevance', value: course.scoreBreakdown?.relevance || 0, icon: '🎯' },
+    { name: 'Difficulty', value: course.scoreBreakdown?.difficulty || 0, icon: '📈' },
+    { name: 'Performance', value: course.scoreBreakdown?.performance || 0, icon: '⚡' },
+    { name: 'Engagement', value: course.scoreBreakdown?.engagement || 0, icon: '👥' },
+    { name: 'Progression', value: course.scoreBreakdown?.progression || 0, icon: '📊' },
+    { name: 'Popularity', value: course.scoreBreakdown?.popularity || 0, icon: '⭐' },
+    { name: 'Freshness', value: course.scoreBreakdown?.freshness || 0, icon: '✨' }
   ];
 
   const getDifficultyColor = (difficulty: string) => {
@@ -113,10 +113,10 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
           <div className="main-score">
             <div 
               className="score-circle"
-              style={{ borderColor: getScoreColor(course.recommendationScore) }}
+              style={{ borderColor: getScoreColor((course.recommendationScore || 0) / 10) }}
             >
-              <span className="score-value">{course.recommendationScore.toFixed(1)}</span>
-              <span className="score-label">/ 10</span>
+              <span className="score-value">{Math.round(course.recommendationScore || 0)}</span>
+              <span className="score-label">/ 100</span>
             </div>
           </div>
         </div>
@@ -153,7 +153,9 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
         {/* Recommendation Reason */}
         <div className="reason-section">
           <p className="reason-label">💡 Lý Do Đề Xuất:</p>
-          <p className="reason-text">{course.reason}</p>
+          <p className="reason-text">
+            {course.reason || (course.reasons && course.reasons.length > 0 ? course.reasons.join(', ') : "Khóa học này phù hợp với mục tiêu và cấp độ hiện tại của bạn.")}
+          </p>
         </div>
 
         {/* Score Breakdown */}
@@ -178,8 +180,8 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
                   <div 
                     className="bar-fill"
                     style={{
-                      width: `${Math.min(factor.value * 10, 100)}%`,
-                      backgroundColor: getScoreColor(factor.value),
+                      width: `${Math.min(factor.value, 100)}%`,
+                      backgroundColor: getScoreColor(factor.value / 10),
                       opacity: hoverScoreType === factor.name ? 1 : 0.7
                     }}
                   />

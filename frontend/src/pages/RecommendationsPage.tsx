@@ -9,7 +9,6 @@ import {
   clearRecommendations,
 } from '../features/recommendationSlice';
 import RecommendationCard from '../components/RecommendationCard';
-import UserSegmentCard from '../components/UserSegmentCard';
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Error } from '../components/Error';
@@ -40,25 +39,30 @@ export default function RecommendationsPage() {
     }
   }, [user, navigate]);
 
-  // Load recommendations on mount
+  // 1. Load segment trước
   useEffect(() => {
     if (user) {
-      dispatch(generateRecommendations());
       dispatch(updateUserSegment());
     }
   }, [dispatch, user]);
 
-  // Sort recommendations
+  // 2. Khi có segment thì mới generate
+  useEffect(() => {
+    if (userSegment) {
+      dispatch(generateRecommendations());
+    }
+  }, [dispatch, userSegment]);
+
   const sortedRecommendations = [...recommendations].sort((a, b) => {
     switch (sortBy) {
       case 'score':
         return b.recommendationScore - a.recommendationScore;
       case 'relevance':
-        return b.scoreBreakdown.relevance - a.scoreBreakdown.relevance;
+        return (b.scoreBreakdown?.relevance ?? 0) - (a.scoreBreakdown?.relevance ?? 0);
       case 'difficulty':
         const diffOrder = { 'Beginner': 0, 'Intermediate': 1, 'Advanced': 2 };
         return (diffOrder[a.difficulty as keyof typeof diffOrder] || 0) -
-               (diffOrder[b.difficulty as keyof typeof diffOrder] || 0);
+          (diffOrder[b.difficulty as keyof typeof diffOrder] || 0);
       default:
         return 0;
     }
@@ -68,8 +72,8 @@ export default function RecommendationsPage() {
   const filteredRecommendations = filterDifficulty === 'all'
     ? sortedRecommendations
     : sortedRecommendations.filter(
-        (course) => course.difficulty.toLowerCase() === filterDifficulty.toLowerCase()
-      );
+      (course) => course.difficulty.toLowerCase() === filterDifficulty.toLowerCase()
+    );
 
   const handleRefresh = () => {
     dispatch(clearRecommendations());
@@ -94,7 +98,7 @@ export default function RecommendationsPage() {
   return (
     <div className="recommendations-page">
       <Header title="Đề Xuất" />
-      
+
       <div className="page-container">
         {/* Page Header */}
         <div className="page-header">
@@ -105,14 +109,14 @@ export default function RecommendationsPage() {
             </p>
           </div>
           <div className="header-actions">
-            <button 
+            <button
               className="btn btn-primary"
               onClick={handleRefresh}
               disabled={isLoading}
             >
               {isLoading ? '⏳ Đang tải...' : '🔄 Làm Mới'}
             </button>
-            <button 
+            <button
               className="btn btn-secondary"
               onClick={handleViewAnalytics}
             >
@@ -123,7 +127,7 @@ export default function RecommendationsPage() {
 
         {/* Error Message */}
         {error && (
-          <Error 
+          <Error
             message={error}
             onDismiss={() => dispatch(clearRecommendations())}
           />
@@ -131,11 +135,39 @@ export default function RecommendationsPage() {
 
         {/* User Segment Card */}
         <div className="segment-section">
-          <UserSegmentCard 
-            segment={userSegment} 
-            weights={segmentWeights}
-            isLoading={isLoading}
-          />
+          <div className="analytics-card" style={{ marginBottom: '24px' }}>
+            <h3>🎯 Trọng Số Yếu Tố ({userSegment || 'Chưa phân loại'})</h3>
+            {isLoading ? (
+              <Loading />
+            ) : segmentWeights ? (
+              <div className="analytics-grid" style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                {Object.entries(segmentWeights).map(([key, value]) => {
+                  const percentage = Math.round((value as number) * 100);
+                  return (
+                    <div key={key} className="analytics-item" style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span className="analytics-label" style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{key}</span>
+                        <span className="analytics-value" style={{ fontSize: '14px', color: '#3b82f6' }}>{percentage}%</span>
+                      </div>
+                      <div style={{ width: '100%', backgroundColor: '#e2e8f0', borderRadius: '4px', height: '8px' }}>
+                        <div 
+                          style={{ 
+                            width: `${percentage}%`, 
+                            backgroundColor: '#3b82f6', 
+                            height: '100%', 
+                            borderRadius: '4px',
+                            transition: 'width 0.5s ease-in-out'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ color: '#64748b' }}>Không có dữ liệu trọng số.</p>
+            )}
+          </div>
         </div>
 
         {/* Analytics Section */}
@@ -143,7 +175,7 @@ export default function RecommendationsPage() {
           <div className="analytics-section">
             <div className="analytics-card">
               <h3>📈 Thống Kê Hiệu Suất</h3>
-              
+
               <div className="analytics-grid">
                 <div className="analytics-item">
                   <span className="analytics-label">Tổng Đề Xuất:</span>
@@ -195,7 +227,7 @@ export default function RecommendationsPage() {
         <div className="controls-section">
           <div className="sort-control">
             <label htmlFor="sort-select">Sắp Xếp Theo:</label>
-            <select 
+            <select
               id="sort-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
@@ -209,7 +241,7 @@ export default function RecommendationsPage() {
 
           <div className="filter-control">
             <label htmlFor="difficulty-select">Độ Khó:</label>
-            <select 
+            <select
               id="difficulty-select"
               value={filterDifficulty}
               onChange={(e) => setFilterDifficulty(e.target.value)}
@@ -256,7 +288,7 @@ export default function RecommendationsPage() {
                 ? 'Hãy hoàn thành một số khóa học để nhận được những đề xuất tốt hơn.'
                 : 'Không tìm thấy khóa học phù hợp với bộ lọc của bạn.'}
             </p>
-            <button 
+            <button
               className="btn btn-primary"
               onClick={() => navigate('/course')}
             >

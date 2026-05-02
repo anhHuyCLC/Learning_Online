@@ -26,6 +26,8 @@ const LessonPage: React.FC = () => {
 
   const course = courses?.[0];
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'materials' | 'discussion'>('overview');
+  const [showToast, setShowToast] = useState(false);
 
   // Fetch Course & Progress
   useEffect(() => {
@@ -53,6 +55,10 @@ const LessonPage: React.FC = () => {
 
   const handleMarkAsCompleted = () => {
     dispatch(markLessonAsCompleted({ lessonId: lessonIdNum, courseId: courseIdNum }));
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
   };
 
   const isCompleted = completedLessons.includes(lessonIdNum);
@@ -61,6 +67,11 @@ const LessonPage: React.FC = () => {
 
   // Bắt buộc xem xong bài, và NẾU có quiz thì phải PASS quiz
   const canProceedToNext = isCompleted && (!hasQuiz || isQuizPassed);
+
+  const getProgressPercentage = () => {
+    if (!course?.lessons?.length) return 0;
+    return Math.round((completedLessons.length / course.lessons.length) * 100);
+  };
 
   if (courseLoading) {
     return <Loading />;
@@ -81,108 +92,218 @@ const LessonPage: React.FC = () => {
     );
   }
 
-  const nextLesson = (course.lessons || [])
-    .filter((l: Lesson) => (l.lesson_order ?? 0) > (lesson.lesson_order ?? 0))
-    .sort((a: Lesson, b: Lesson) => (a.lesson_order ?? 0) - (b.lesson_order ?? 0))[0];
+  const sortedLessons = [...(course.lessons || [])].sort((a: Lesson, b: Lesson) => (a.lesson_order ?? 0) - (b.lesson_order ?? 0));
+  const currentLessonIndex = sortedLessons.findIndex(l => l.id === lesson.id);
+  const nextLesson = sortedLessons[currentLessonIndex + 1];
 
   return (
-    <div>
-      <Header title={lesson.title} />
-      <div className="course-learning-container">
-        <div className="lesson-video-container">
-          <p>{lesson.content}</p>
-          {lesson.video_url ? (
-            <iframe
-              width="100%"
-              height="500"
-              src={lesson.video_url}
-              title={lesson.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          ) : (
-            <p>Không có video cho bài học này.</p>
-          )}
-        </div>
-
-        <div className="lesson-actions" style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          
-          {/* 1. Nút đánh dấu hoàn thành (Ẩn đi nếu đã hoàn thành, thay bằng text) */}
-          {!isCompleted ? (
-            <button
-              onClick={handleMarkAsCompleted}
-              className="complete-btn"
-            >
-              Đánh dấu đã hoàn thành
-            </button>
-          ) : (
-            <span style={{ color: '#28a745', fontWeight: 'bold' }}>
-              ✅ Đã xem xong bài học
-            </span>
-          )}
-
-          {/* 2. Button chuyển trang Quiz (Chỉ hiện khi ĐÃ xem xong & BÀI CÓ QUiZ) */}
-          {hasQuiz && isCompleted && (
-            <button 
-              className="complete-btn" // Dùng chung class để có style giống nút kia
-              style={{ backgroundColor: isQuizPassed ? '#17a2b8' : '#ff9800', color: '#fff' }}
-              onClick={() => navigate(`/quiz/lesson/${lessonIdNum}`)}
-            >
-              {isQuizPassed ? '🔄 Làm lại Quiz' : '📝 Chuyển đến trang Làm Quiz'}
-            </button>
-          )}
-          {hasQuiz && isCompleted && (
-             <span style={{ fontSize: '0.9em' }}>
-               {!isQuizPassed ? (
-                 <span style={{ color: '#dc3545' }}>(Bạn cần pass Quiz để qua bài mới)</span>
-               ) : (
-                 <span style={{ color: '#28a745' }}>(Đã Pass Quiz)</span>
-               )}
-             </span>
-          )}
-
-          {/* 4. Nút Bài học tiếp theo / Hoàn thành khóa học */}
-          <div style={{ marginLeft: 'auto' }}>
-            {nextLesson ? (
-              <button
-                className={`complete-btn ${!canProceedToNext ? 'disabled' : ''}`}
-                onClick={(e) => {
-                  if (!canProceedToNext) {
-                    e.preventDefault();
-                    alert(hasQuiz 
-                      ? "Bạn phải hoàn thành bài học và đạt điểm qua bài Quiz để chuyển sang bài tiếp theo!"
-                      : "Vui lòng bấm 'Đánh dấu đã hoàn thành' trước khi qua bài mới!"
-                    );
-                  } else {
-                    navigate(`/courses/${courseIdNum}/lessons/${nextLesson.id}`);
-                  }
-                }}
-                style={{ 
-                  backgroundColor: canProceedToNext ? '#007bff' : '#6c757d',
-                  cursor: canProceedToNext ? 'pointer' : 'not-allowed' 
-                }}
-              >
-                Bài học tiếp theo ➡️
-              </button>
-            ) : (
-              <button 
-                onClick={() => {
-                  alert("🎉 Chúc mừng bạn đã hoàn thành xuất sắc khóa học!");
-                  navigate('/profile');
-                }} 
-                className="complete-btn"
-                disabled={!canProceedToNext}
-                style={{ 
-                  backgroundColor: canProceedToNext ? '#28a745' : '#6c757d',
-                  cursor: canProceedToNext ? 'pointer' : 'not-allowed' 
-                }}
-              >
-                🏆 Hoàn thành khóa học
-              </button>
-            )}
+    <div className="lesson-page-bg">
+      <Header title={course.title} />
+      
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="toast-notification">
+          <span className="toast-icon">✅</span>
+          <div className="toast-content">
+            <h4>Tuyệt vời!</h4>
+            <p>Bạn đã hoàn thành bài học này.</p>
           </div>
         </div>
+      )}
+
+      <div className="lesson-page-layout">
+        {/* LEFT COLUMN: Video & Content */}
+        <div className="lesson-main">
+          {/* Video Player */}
+          <div className="video-player-wrapper">
+            {lesson.video_url ? (
+              <iframe
+                className="video-iframe"
+                src={lesson.video_url}
+                title={lesson.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <div className="no-video-fallback">
+                <span className="fallback-icon">🎥</span>
+                <p>Bài học này không có video</p>
+              </div>
+            )}
+          </div>
+
+          {/* Lesson Details & Actions */}
+          <div className="lesson-details-card">
+            <div className="lesson-header-flex">
+              <div>
+                <h1 className="lesson-title-large">Bài {lesson.lesson_order}: {lesson.title}</h1>
+                <div className="lesson-meta-info">
+                  {hasQuiz && <span className="meta-badge quiz">📝 Có Quiz</span>}
+                  {isCompleted && <span className="meta-badge completed">✅ Đã hoàn thành</span>}
+                </div>
+              </div>
+              
+              <div className="lesson-primary-actions">
+                {!isCompleted ? (
+                  <button
+                    onClick={handleMarkAsCompleted}
+                    className="btn-mark-complete"
+                  >
+                    <span className="icon">✓</span>
+                    Đánh dấu hoàn thành
+                  </button>
+                ) : (
+                  hasQuiz && (
+                    <button 
+                      className={`btn-quiz ${isQuizPassed ? 'passed' : 'pending'}`}
+                      onClick={() => navigate(`/quiz/lesson/${lessonIdNum}`)}
+                    >
+                      <span className="icon">📝</span>
+                      {isQuizPassed ? 'Làm lại Quiz' : 'Làm Quiz ngay'}
+                    </button>
+                  )
+                )}
+
+                {nextLesson ? (
+                  <button
+                    className={`btn-next-lesson ${!canProceedToNext ? 'disabled' : ''}`}
+                    onClick={(e) => {
+                      if (!canProceedToNext) {
+                        e.preventDefault();
+                        alert(hasQuiz 
+                          ? "Bạn phải hoàn thành bài học và đạt điểm qua bài Quiz để chuyển sang bài tiếp theo!"
+                          : "Vui lòng bấm 'Đánh dấu đã hoàn thành' trước khi qua bài mới!"
+                        );
+                      } else {
+                        navigate(`/courses/${courseIdNum}/lessons/${nextLesson.id}`);
+                      }
+                    }}
+                  >
+                    Bài tiếp theo
+                    <span className="icon">➡️</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      alert("🎉 Chúc mừng bạn đã hoàn thành xuất sắc khóa học!");
+                      navigate('/profile');
+                    }} 
+                    className="btn-finish-course"
+                    disabled={!canProceedToNext}
+                  >
+                    🏆 Hoàn thành khóa học
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {hasQuiz && isCompleted && !isQuizPassed && (
+              <div className="quiz-warning-banner">
+                ⚠️ Bạn cần hoàn thành bài Quiz để có thể qua bài học tiếp theo.
+              </div>
+            )}
+
+            {/* Tabs Navigation */}
+            <div className="lesson-tabs">
+              <button 
+                className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overview')}
+              >
+                Tổng quan
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'materials' ? 'active' : ''}`}
+                onClick={() => setActiveTab('materials')}
+              >
+                Tài liệu
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'discussion' ? 'active' : ''}`}
+                onClick={() => setActiveTab('discussion')}
+              >
+                Thảo luận
+              </button>
+            </div>
+            
+            <div className="lesson-tab-content">
+              {activeTab === 'overview' && (
+                <div className="content-overview">
+                  <h3>Nội dung bài học</h3>
+                  <div className="content-text">{lesson.content || 'Chưa có mô tả cho bài học này.'}</div>
+                </div>
+              )}
+              {activeTab === 'materials' && (
+                <div className="content-empty">
+                  <span className="empty-icon">📁</span>
+                  <p>Chưa có tài liệu đính kèm.</p>
+                </div>
+              )}
+              {activeTab === 'discussion' && (
+                <div className="content-empty">
+                  <span className="empty-icon">💬</span>
+                  <p>Phần thảo luận đang được cập nhật.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Sidebar */}
+        <aside className="lesson-sidebar">
+          {/* Progress Card */}
+          <div className="sidebar-progress-card">
+            <div className="progress-header">
+              <h3>Tiến độ khóa học</h3>
+              <span className="progress-text">{completedLessons.length}/{course.lessons?.length || 0} bài</span>
+            </div>
+            <div className="progress-bar-track">
+              <div 
+                className="progress-bar-fill" 
+                style={{ width: `${getProgressPercentage()}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Playlist / Lessons List */}
+          <div className="sidebar-playlist-card">
+            <h3 className="playlist-title">Nội dung khóa học</h3>
+            <div className="playlist-scroll">
+              {sortedLessons.map((l, index) => {
+                const isItemCompleted = completedLessons.includes(l.id);
+                const isCurrent = l.id === lesson.id;
+                
+                // Lock logic
+                const prevLesson = sortedLessons[index - 1];
+                const isPrevLessonCompleted = prevLesson ? completedLessons.includes(prevLesson.id) : true;
+                const isLocked = index !== 0 && !isPrevLessonCompleted;
+
+                return (
+                  <div 
+                    key={l.id} 
+                    className={`playlist-item ${isCurrent ? 'current' : ''} ${isItemCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`}
+                    onClick={() => {
+                      if (!isLocked && !isCurrent) {
+                        navigate(`/courses/${courseIdNum}/lessons/${l.id}`);
+                      }
+                    }}
+                  >
+                    <div className="item-icon">
+                      {isItemCompleted ? '✓' : (isLocked ? '🔒' : (isCurrent ? '▶' : '📄'))}
+                    </div>
+                    <div className="item-content">
+                      <div className="item-title">Bài {l.lesson_order}: {l.title}</div>
+                      <div className="item-duration">
+                        {l.has_quiz && <span className="item-badge">Quiz</span>}
+                        ⏱️ {30 + index * 5} phút
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

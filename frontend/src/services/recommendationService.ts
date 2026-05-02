@@ -2,14 +2,14 @@
 import apiClient from './apiClient';
 
 export interface RecommendationScore {
-  relevance: number;
-  difficulty: number;
-  performance: number;
-  engagement: number;
-  progression: number;
-  popularity: number;
-  freshness: number;
-  final: number;
+  relevance?: number;
+  difficulty?: number;
+  performance?: number;
+  engagement?: number;
+  progression?: number;
+  popularity?: number;
+  freshness?: number;
+  final?: number;
 }
 
 export interface RecommendedCourse {
@@ -23,7 +23,8 @@ export interface RecommendedCourse {
   enrollmentCount: number;
   recommendationScore: number;
   scoreBreakdown: RecommendationScore;
-  reason: string;
+  reason?: string;
+  reasons?: string[];
 }
 
 export interface GenerateRecommendationsResponse {

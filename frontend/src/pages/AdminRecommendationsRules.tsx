@@ -1,14 +1,5 @@
-/**
- * Admin Recommendation Rules Page
- * File: frontend/src/pages/AdminRecommendationsRules.tsx
- * 
- * Admin page for managing recommendation rules.
- */
-
-import React, { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '../app/store';
-import type { RootState } from '../app/store';
-import AdminLayout from '../components/AdminLayout.tsx';
+import { useEffect, useState } from 'react';
+import { useAppDispatch} from '../app/store';
 import recommendationService from '../services/recommendationService';
 import type { RecommendationRule } from '../services/recommendationService';
 import '../styles/adminRecommendationsRules.css';
@@ -140,7 +131,7 @@ export default function AdminRecommendationsRules() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="admin-rules-container">
         <div className="rules-header">
           <div>
@@ -354,6 +345,6 @@ export default function AdminRecommendationsRules() {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }

@@ -12,7 +12,8 @@ export default function Home() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
+  const API_URL = "http://localhost:3000";
+  const DEFAULT_IMAGE = "https://via.placeholder.com/300x200?text=Course";
 
   const user = useAppSelector((state: RootState) => state.auth.user);
   const { courses, loading, error } = useAppSelector((state) => state.courses);
@@ -80,18 +81,6 @@ export default function Home() {
             </a>
 
             <a
-              href="#pricing"
-              className="nav-link"
-              onClick={(e) => {
-                e.preventDefault();
-                document.querySelector("#pricing")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              Giá Cả
-            </a>
-
-            <a
               href="#landing-footer"
               className="nav-link"
               onClick={(e) => {
@@ -129,13 +118,13 @@ export default function Home() {
                 >
                   👤 {user?.name}
                 </button>
-                <button
+                {/* <button
                   className="btn-text"
                   onClick={() => navigate("/my-enrollments")}
                   title="Các khóa học của tôi"
                 >
                   📚 Khóa học
-                </button>
+                </button> */}
                 <button
                   className="btn-text"
                   onClick={() => navigate("/recommendations")}
@@ -240,25 +229,42 @@ export default function Home() {
           {courses.map((course: Courses) => {
             const imageUrl = course.image
               ? `${API_URL}${course.image}`
-              : "https://via.placeholder.com/400x300?text=Course+Image";
+              : DEFAULT_IMAGE;
+
             return (
               <div key={course.id} className="course-card">
                 <div className="course-image">
                   <img
                     src={imageUrl}
                     alt={course.name}
+                    loading="lazy"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://via.placeholder.com/400x300?text=Course+Image";
+                      const img = e.currentTarget;
+
+                      // tránh loop vô hạn
+                      if (img.src !== window.location.origin + DEFAULT_IMAGE) {
+                        img.src = DEFAULT_IMAGE;
+                      }
                     }}
                   />
                 </div>
+
                 <div className="course-meta">
                   <h3>{course.name}</h3>
                   <p>{course.description}</p>
+
                   <div className="course-footer">
-                    <span className="duration">12 tuần</span>
-                    <button className="btn-text" onClick={() => navigate(`/course/${course.id}`)}>
+                    {/* 👉 dùng duration từ DB */}
+                    <span className="duration">
+                      {course.duration
+                        ? `${Math.floor(course.duration / 60)}h ${course.duration % 60}m`
+                        : "Đang cập nhật"}
+                    </span>
+
+                    <button
+                      className="btn-text"
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
                       {isLogin ? "Tiếp Tục →" : "Xem Chi Tiết →"}
                     </button>
                   </div>
@@ -267,50 +273,50 @@ export default function Home() {
             );
           })}
         </div>
-
         {error && <div className="error-message">{error}</div>}
         {loading && <div className="loading">Đang tải khóa học...</div>}
       </section>
 
-      <section className="final-cta">
-        <div className="cta-content">
-          <h2>Sẵn Sàng Chuyển Đổi Sự Nghiệp Của Bạn?</h2>
-          <p>Tham gia hơn 50.000 học viên đã bắt đầu hành trình học tập của họ</p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer id="landing-footer" className="landing-footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <h4>Sản Phẩm</h4>
-            <a href="#features">Tính Năng</a>
-            <a href="#pricing">Giá Cả</a>
-            <a href="#about">Về Chúng Tôi</a>
-          </div>
-          <div className="footer-section">
-            <h4>Tài Nguyên</h4>
-            <a href="#blog">Blog</a>
-            <a href="#help">Trung Tâm Trợ Giúp</a>
-            <a href="#contact">Liên Hệ</a>
-          </div>
-          <div className="footer-section">
-            <h4>Pháp Lý</h4>
-            <a href="#privacy">Quyền Riêng Tư</a>
-            <a href="#terms">Điều Khoản</a>
-            <a href="#cookies">Cookie</a>
-          </div>
-          <div className="footer-section">
-            <h4>Kết Nối</h4>
-            <a href="#twitter">Twitter</a>
-            <a href="#linkedin">LinkedIn</a>
-            <a href="#github">GitHub</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Nền Tảng Học Tập. Bảo lưu mọi quyền.</p>
-        </div>
-      </footer>
+  <section className="final-cta">
+    <div className="cta-content">
+      <h2>Sẵn Sàng Chuyển Đổi Sự Nghiệp Của Bạn?</h2>
+      <p>Tham gia hơn 50.000 học viên đã bắt đầu hành trình học tập của họ</p>
     </div>
+  </section>
+
+
+{/* Footer */ }
+<footer id="landing-footer" className="landing-footer">
+  <div className="footer-content">
+    <div className="footer-section">
+      <h4>Sản Phẩm</h4>
+      <a href="#features">Tính Năng</a>
+      <a href="#pricing">Giá Cả</a>
+      <a href="#about">Về Chúng Tôi</a>
+    </div>
+    <div className="footer-section">
+      <h4>Tài Nguyên</h4>
+      <a href="#blog">Blog</a>
+      <a href="#help">Trung Tâm Trợ Giúp</a>
+      <a href="#contact">Liên Hệ</a>
+    </div>
+    <div className="footer-section">
+      <h4>Pháp Lý</h4>
+      <a href="#privacy">Quyền Riêng Tư</a>
+      <a href="#terms">Điều Khoản</a>
+      <a href="#cookies">Cookie</a>
+    </div>
+    <div className="footer-section">
+      <h4>Kết Nối</h4>
+      <a href="#twitter">Twitter</a>
+      <a href="#linkedin">LinkedIn</a>
+      <a href="#github">GitHub</a>
+    </div>
+  </div>
+  <div className="footer-bottom">
+    <p>&copy; {new Date().getFullYear()} Nền Tảng Học Tập. Bảo lưu mọi quyền.</p>
+  </div>
+</footer>
+    </div >
   );
 }

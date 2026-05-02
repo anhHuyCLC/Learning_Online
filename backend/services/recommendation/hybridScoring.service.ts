@@ -163,7 +163,8 @@ class HybridScoringEngine {
       engagementScore * 0.15 +
       popularityScore * 0.15;
 
-    return Math.round(hybridScore * 100) / 100; // Round to 2 decimals
+    // Issue 1 Fix: Ensure 100-point scale for recommendation scores
+    return Math.round(hybridScore * 100);
   }
 
   /**
@@ -172,7 +173,7 @@ class HybridScoringEngine {
    * Measures how well the course aligns with user's skills and interests
    * Uses cosine similarity of skill vectors
    */
-  private static calculateRelevanceScore(
+  public static calculateRelevanceScore(
     userFeatures: UserFeatureVector,
     courseFeatures: CourseFeatureVector
   ): number {
@@ -211,7 +212,7 @@ class HybridScoringEngine {
    * Measures how well course difficulty matches user's learning level
    * Optimal when: user_difficulty ≈ course_difficulty
    */
-  private static calculateDifficultyScore(
+  public static calculateDifficultyScore(
     userFeatures: UserFeatureVector,
     courseFeatures: CourseFeatureVector
   ): number {
@@ -238,7 +239,7 @@ class HybridScoringEngine {
    * - Course's completion rate (proxy for achievability)
    * - Learning level progression path
    */
-  private static calculatePerformanceScore(
+  public static calculatePerformanceScore(
     userFeatures: UserFeatureVector,
     courseFeatures: CourseFeatureVector
   ): number {
@@ -264,7 +265,7 @@ class HybridScoringEngine {
    * - Course's expected time commitment vs user's capacity
    * - Learning level appropriateness
    */
-  private static calculateEngagementScore(
+  public static calculateEngagementScore(
     userFeatures: UserFeatureVector,
     courseFeatures: CourseFeatureVector
   ): number {
@@ -291,7 +292,7 @@ class HybridScoringEngine {
    * - Average rating
    * - Ratings from similar users (collaborative filtering)
    */
-  private static calculatePopularityScore(
+  public static calculatePopularityScore(
     courseFeatures: CourseFeatureVector,
     similarUserRatings?: number
   ): number {
@@ -336,8 +337,8 @@ class HybridScoringEngine {
       score *= 1.1; // 10% boost for new courses
     }
 
-    // Hard ceiling for very high scores
-    return Math.min(score, 98);
+    // Hard ceiling for very high scores, enforcing 100-point scale
+    return Math.min(Math.round(score), 100);
   }
 }
 
@@ -372,6 +373,8 @@ class RulesEngine {
       courses = fallbackRows;
     }
 
+    console.log(`[Hybrid Debug] Total courses fetched from DB: ${courses.length}`);
+
     // Lấy danh sách khóa học user đã đăng ký để loại trừ
     const [enrolled]: any = await db.execute(
       'SELECT course_id FROM enrollments WHERE user_id = ?',
@@ -379,10 +382,17 @@ class RulesEngine {
     );
     const enrolledIds = enrolled.map((e: any) => e.course_id);
 
+    console.log(`[Hybrid Debug] User ${userId} enrolled courses: ${enrolledIds.length}`);
+
     // Lọc bỏ những khóa user đã học
-    return courses
-      .filter((c: any) => !enrolledIds.includes(c.id))
-      .map((c: any) => ({ 
+    const unEnrolledCourses = courses.filter((c: any) => !enrolledIds.includes(c.id));
+    console.log(`[Hybrid Debug] Courses remaining after enrollment filter: ${unEnrolledCourses.length}`);
+
+    if (unEnrolledCourses.length === 0) {
+      console.log(`[Hybrid Debug] ALL courses were filtered out for user ${userId}. Reason: User has enrolled in all available courses or DB is empty.`);
+    }
+
+    return unEnrolledCourses.map((c: any) => ({ 
         ...c, 
         name: c.title || c.name || 'Khóa học', 
         difficulty: c.difficulty || 2, 
@@ -416,13 +426,38 @@ class HybridRecommendationEngine {
     
     // Step 2: Rule-based filtering
     const rulesEngine = new RulesEngine();
-    const rulePassingCourses = await rulesEngine.filterCoursesBySegment(
+    let rulePassingCourses = await rulesEngine.filterCoursesBySegment(
       userId,
       userSegment,
       userFeatures
     );
 
     console.log(`[Hybrid] Rule filtering: ${rulePassingCourses.length} courses passed`);
+
+    // Issue 4 Fix: Empty Recommendations Fallback
+    if (rulePassingCourses.length === 0) {
+      console.log(`[Hybrid Debug] Filtering rules wiped out all courses for user ${userId}. Falling back to default popular courses.`);
+      const db = await connectDB();
+      const [enrolled]: any = await db.execute('SELECT course_id FROM enrollments WHERE user_id = ?', [userId]);
+      const enrolledIds = enrolled.map((e: any) => e.course_id);
+
+      let query = `SELECT c.*, cat.name as category FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id`;
+      if (enrolledIds.length > 0) {
+        const placeholders = enrolledIds.map(() => '?').join(',');
+        query += ` WHERE c.id NOT IN (${placeholders})`;
+      }
+      query += ` ORDER BY c.enrollment_count DESC LIMIT 20`;
+      
+      const [fallbackRows]: any = await db.execute(query, enrolledIds.length > 0 ? enrolledIds : []);
+      rulePassingCourses = fallbackRows.map((c: any) => ({
+        ...c,
+        name: c.title || c.name || 'Khóa học',
+        difficulty: c.difficulty || 2,
+        prerequisitesMet: 0,
+        daysSinceDismissed: undefined,
+        skills: []
+      }));
+    }
 
     // Step 3: ML scoring
     const scoredCourses = await Promise.all(
@@ -444,6 +479,8 @@ class HybridRecommendationEngine {
           course.daysSinceDismissed || undefined
         );
 
+        const reasonsList = this.generateReasons(userFeatures, courseFeatures);
+
         return {
           courseId: course.id,
           courseName: course.name,
@@ -456,7 +493,9 @@ class HybridRecommendationEngine {
             courseFeatures,
             mlScore
           ),
-          reasons: this.generateReasons(userFeatures, courseFeatures),
+          reasons: reasonsList,
+          // Issue 2 Fix: Map the reason field directly to a string for DB insert
+          reason: reasonsList.length > 0 ? reasonsList.join(', ') : "Khóa học này phù hợp với mục tiêu và cấp độ hiện tại của bạn.",
         };
       })
     );
@@ -581,11 +620,13 @@ class HybridRecommendationEngine {
   ): Promise<ScoreBreakdown> {
     return {
       relevance: HybridScoringEngine['calculateRelevanceScore'](userFeatures, courseFeatures),
-      difficultyMatch: HybridScoringEngine['calculateDifficultyScore'](userFeatures, courseFeatures),
-      performancePotential: HybridScoringEngine['calculatePerformanceScore'](userFeatures, courseFeatures),
-      engagementFactor: HybridScoringEngine['calculateEngagementScore'](userFeatures, courseFeatures),
-      popularityProof: HybridScoringEngine['calculatePopularityScore'](courseFeatures),
-      total: totalScore,
+      difficulty: HybridScoringEngine['calculateDifficultyScore'](userFeatures, courseFeatures),
+      performance: HybridScoringEngine['calculatePerformanceScore'](userFeatures, courseFeatures),
+      engagement: HybridScoringEngine['calculateEngagementScore'](userFeatures, courseFeatures),
+      popularity: HybridScoringEngine['calculatePopularityScore'](courseFeatures),
+      freshness: 0,
+      progression: 0,
+      final: totalScore,
     };
   }
 
@@ -709,21 +750,51 @@ class HybridRecommendationEngine {
   ): Promise<void> {
     try {
       const db = await connectDB();
-      const values = recommendations.map(r => [
-        userId,
-        r.courseId,
-        r.finalScore,
-        JSON.stringify(r.scoreBreakdown),
-        JSON.stringify(r.reasons),
-        'hybrid-v1'
-      ]);
 
-      for (const val of values) {
-        await db.execute(
-          `INSERT INTO recommendation_history (user_id, course_id, recommendation_score, component_scores, reasons, segment_type) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          val
+      for (const r of recommendations) {
+        // Issue 3 Fix: Data Duplication (Debounce check before insert)
+        const [existing]: any = await db.execute(
+          `SELECT id FROM recommendation_history 
+           WHERE user_id = ? AND course_id = ? AND recommended_at >= NOW() - INTERVAL 5 MINUTE`,
+          [userId, r.courseId]
         );
+
+        if (existing && existing.length > 0) {
+          // Update existing recommendation instead of creating a duplicate
+          await db.execute(
+            `UPDATE recommendation_history
+             SET recommendation_score = ?, component_scores = ?, reason = ?, segment_type = ?, recommended_at = NOW()
+             WHERE id = ?`,
+            [r.finalScore, JSON.stringify(r.scoreBreakdown), r.reason || null, 'hybrid-v1', existing[0].id]
+          );
+        } else {
+          try {
+            await db.execute(
+              `INSERT INTO recommendation_history (user_id, course_id, recommendation_score, component_scores, reason, segment_type)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [userId, r.courseId, r.finalScore, JSON.stringify(r.scoreBreakdown), r.reason || null, 'hybrid-v1']
+            );
+          } catch (err: any) {
+            // Fallback: If 'reason' column is missing or schema mismatches
+            if (err.code === 'ER_BAD_FIELD_ERROR' || err.errno === 1054) {
+              try {
+                await db.execute(
+                  `INSERT INTO recommendation_history (user_id, course_id, recommendation_score, component_scores, reasons, segment_type)
+                   VALUES (?, ?, ?, ?, ?, ?)`,
+                  [userId, r.courseId, r.finalScore, JSON.stringify(r.scoreBreakdown), JSON.stringify(r.reasons || []), 'hybrid-v1']
+                );
+              } catch (fallbackErr) {
+                await db.execute(
+                  `INSERT INTO recommendation_history (user_id, course_id, recommendation_score, component_scores, segment_type) 
+                   VALUES (?, ?, ?, ?, ?)`,
+                  [userId, r.courseId, r.finalScore, JSON.stringify(r.scoreBreakdown), 'hybrid-v1']
+                );
+              }
+            } else {
+              throw err;
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Lỗi ghi log recommendation:", error);
@@ -744,15 +815,18 @@ interface RecommendationResult {
   finalScore: number;
   scoreBreakdown: ScoreBreakdown;
   reasons: string[];
+  reason?: string;
 }
 
 interface ScoreBreakdown {
-  relevance: number; // 0-1
-  difficultyMatch: number; // 0-1
-  performancePotential: number; // 0-1
-  engagementFactor: number; // 0-1
-  popularityProof: number; // 0-1
-  total: number; // 0-100
+  relevance: number;
+  difficulty: number;
+  performance: number;
+  engagement: number;
+  popularity: number;
+  freshness: number;
+  progression: number;
+  final: number;
 }
 
 export {
