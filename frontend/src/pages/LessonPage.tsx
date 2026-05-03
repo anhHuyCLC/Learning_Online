@@ -28,6 +28,8 @@ const LessonPage: React.FC = () => {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'materials' | 'discussion'>('overview');
   const [showToast, setShowToast] = useState(false);
+  const [watchTime, setWatchTime] = useState(0);
+  const estimatedVideoDuration = 20 * 60; // 20 phút tính theo phút ước tính
 
   // Fetch Course & Progress
   useEffect(() => {
@@ -53,6 +55,32 @@ const LessonPage: React.FC = () => {
     }
   }, [dispatch, lessonIdNum]);
 
+  const isCompleted = completedLessons.includes(lessonIdNum);
+  const hasQuiz = quiz && quiz.lesson_id === lessonIdNum; 
+  const isQuizPassed = passedLessonQuizzes[lessonIdNum] === true; 
+
+  // Bắt buộc xem xong bài, và NẾU có quiz thì phải PASS quiz
+  const canProceedToNext = isCompleted && (!hasQuiz || isQuizPassed);
+
+  // Timer cho video watching
+  useEffect(() => {
+    if (!isCompleted && lesson?.video_url) {
+      const interval = setInterval(() => {
+        setWatchTime(prev => {
+          const newTime = prev + 1;
+          // Auto mark as completed khi đạt 80% thời lượng
+          if (newTime >= estimatedVideoDuration * 0.8) {
+            handleAutoMarkAsCompleted();
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isCompleted, lesson?.video_url]);
+
   const handleMarkAsCompleted = () => {
     dispatch(markLessonAsCompleted({ lessonId: lessonIdNum, courseId: courseIdNum }));
     setShowToast(true);
@@ -61,12 +89,17 @@ const LessonPage: React.FC = () => {
     }, 3000);
   };
 
-  const isCompleted = completedLessons.includes(lessonIdNum);
-  const hasQuiz = quiz && quiz.lesson_id === lessonIdNum; 
-  const isQuizPassed = passedLessonQuizzes[lessonIdNum] === true; 
+  const handleAutoMarkAsCompleted = () => {
+    dispatch(markLessonAsCompleted({ lessonId: lessonIdNum, courseId: courseIdNum }));
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
 
-  // Bắt buộc xem xong bài, và NẾU có quiz thì phải PASS quiz
-  const canProceedToNext = isCompleted && (!hasQuiz || isQuizPassed);
+  const handleBackToCourseLearning = () => {
+    navigate(`/courses/${courseIdNum}`);
+  };
 
   const getProgressPercentage = () => {
     if (!course?.lessons?.length) return 0;
@@ -98,7 +131,10 @@ const LessonPage: React.FC = () => {
 
   return (
     <div className="lesson-page-bg">
-      <Header title={course.title} />
+      <Header 
+        title={course.title}
+        onBackClick={handleBackToCourseLearning}
+      />
       
       {/* Toast Notification */}
       {showToast && (
@@ -117,14 +153,21 @@ const LessonPage: React.FC = () => {
           {/* Video Player */}
           <div className="video-player-wrapper">
             {lesson.video_url ? (
-              <iframe
-                className="video-iframe"
-                src={lesson.video_url}
-                title={lesson.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+              <div>
+                <iframe
+                  className="video-iframe"
+                  src={lesson.video_url}
+                  title={lesson.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+                {!isCompleted && (
+                  <div className="video-completion-hint">
+                    <p>💡 Video sẽ được tự động đánh dấu là hoàn thành khi bạn xem xong ({Math.floor(watchTime / 60)}/{Math.floor(estimatedVideoDuration / 60)} phút)</p>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="no-video-fallback">
                 <span className="fallback-icon">🎥</span>
@@ -146,13 +189,10 @@ const LessonPage: React.FC = () => {
               
               <div className="lesson-primary-actions">
                 {!isCompleted ? (
-                  <button
-                    onClick={handleMarkAsCompleted}
-                    className="btn-mark-complete"
-                  >
-                    <span className="icon">✓</span>
-                    Đánh dấu hoàn thành
-                  </button>
+                  <div className="auto-complete-status">
+                    <span className="status-icon">⏳</span>
+                    <span className="status-text">Vui lòng xem hết video để tự động đánh dấu hoàn thành</span>
+                  </div>
                 ) : (
                   hasQuiz && (
                     <button 
@@ -171,10 +211,11 @@ const LessonPage: React.FC = () => {
                     onClick={(e) => {
                       if (!canProceedToNext) {
                         e.preventDefault();
-                        alert(hasQuiz 
-                          ? "Bạn phải hoàn thành bài học và đạt điểm qua bài Quiz để chuyển sang bài tiếp theo!"
-                          : "Vui lòng bấm 'Đánh dấu đã hoàn thành' trước khi qua bài mới!"
-                        );
+                        if (!isCompleted) {
+                          alert("⏳ Vui lòng xem hết video trước!");
+                        } else if (hasQuiz && !isQuizPassed) {
+                          alert("📝 Bạn phải hoàn thành và đạt điểm qua bài Quiz để chuyển sang bài tiếp theo!");
+                        }
                       } else {
                         navigate(`/courses/${courseIdNum}/lessons/${nextLesson.id}`);
                       }

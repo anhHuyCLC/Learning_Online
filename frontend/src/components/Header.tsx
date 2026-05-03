@@ -6,7 +6,8 @@ interface HeaderProps {
   subtitle?: React.ReactNode;
   action?: React.ReactNode;
   fallbackPath?: string;
-  showBackBtn?: boolean; // Thêm prop để tùy chọn ẩn/hiện nút Back
+  showBackBtn?: boolean;
+  onBackClick?: () => void; // Callback tùy chỉnh cho nút quay lại
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -14,13 +15,17 @@ export const Header: React.FC<HeaderProps> = ({
   subtitle, 
   action, 
   fallbackPath = "..",
-  showBackBtn = true
+  showBackBtn = true,
+  onBackClick
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleBack = () => {
-    if (location.key !== "default") {
+    if (onBackClick) {
+      // Nếu có callback tùy chỉnh, ưu tiên dùng nó
+      onBackClick();
+    } else if (location.key !== "default") {
       navigate(-1);
     } else {
       navigate(fallbackPath);
