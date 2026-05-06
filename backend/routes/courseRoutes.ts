@@ -7,7 +7,8 @@ import {
     updateCourse, 
     deleteCourse, 
     getTeacherCourses,
-    createLesson, updateLesson, deleteLesson // Thêm lesson controllers
+    createLesson, updateLesson, deleteLesson,
+    createReview
 } from "../controllers/courseController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
@@ -30,6 +31,9 @@ courseRouter.put("/courses/:id", authMiddleware, updateCourse);
 
 // Delete course - protected
 courseRouter.delete("/courses/:id", authMiddleware, deleteCourse);
+
+// Review course - protected
+courseRouter.post("/courses/:id/reviews", authMiddleware, createReview);
 
 courseRouter.get("/teacher/courses", authMiddleware, getTeacherCourses);
 

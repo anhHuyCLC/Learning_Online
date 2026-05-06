@@ -83,12 +83,18 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
             return res.status(400).json({ success: false, message: "Vui lòng cung cấp ID khóa học" });
         }
 
-        const existingEnrollment = await getAnyEnrollmentByUserAndCourse(userId, courseId);
+        const existingRecords: any = await getAnyEnrollmentByUserAndCourse(userId, courseId);
+ 
+        let existingEnrollment = null;
+        if (existingRecords) {
+            existingEnrollment = existingRecords;
+        }
         
         if (existingEnrollment && existingEnrollment.status === 'active') {
             return res.status(409).json({ success: false, message: "Bạn đã đăng ký khóa học này" });
         }
-        const connection: any = await connectDB();
+        const pool: any = await connectDB();
+        const connection: any = await pool.getConnection();
         try {
             await connection.beginTransaction();
 
@@ -113,12 +119,13 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
             }
             let enrollmentId;
             
-            if (existingEnrollment && existingEnrollment.status === 'cancelled') {
- 
+            if (existingEnrollment) {
+                // Nếu đã có bản ghi (dù cancelled hay completed), ta cập nhật lại thành active
                 await connection.execute("DELETE FROM progress WHERE user_id = ? AND lesson_id IN (SELECT id FROM lessons WHERE course_id = ?)", [userId, courseId]);
                 await connection.execute("UPDATE enrollments SET status = 'active', progress = 0 WHERE user_id = ? AND course_id = ?", [userId, courseId]);
                 enrollmentId = existingEnrollment.id;
             } else {
+                // Nếu chưa từng đăng ký, tạo bản ghi mới
                 const [insertResult]: any = await connection.execute("INSERT INTO enrollments (user_id, course_id, status) VALUES (?, ?, 'active')", [userId, courseId]);
                 enrollmentId = insertResult.insertId;
             }
@@ -134,7 +141,7 @@ export const enrollInCourse = async (req: any, res: any): Promise<void> => {
             await connection.rollback();
             throw dbError;
         } finally {
-            if (connection) connection.release();
+            connection.release();
         }
 
     } catch (error) {

@@ -50,13 +50,15 @@ export const getUserEnrollments = async (userId: number) => {
 // Get enrollment by user and course (any status)
 export const getAnyEnrollmentByUserAndCourse = async (userId: number, courseId: number) => {
     const db: any = await connectDB();
-    const [result]: any = await db.execute(
+    const result: any = await db.execute(
         `SELECT * FROM enrollments 
         WHERE user_id = ? AND course_id = ?
         ORDER BY id DESC LIMIT 1`,
         [userId, courseId]
     );
-    return result[0] || null;
+    // result is [rows, fields] from pool.execute(), so result[0] is the rows array
+    const rows = result[0];
+    return rows && rows.length > 0 ? rows[0] : null;
 };
 
 // Get enrollment by user and course (active only)

@@ -27,7 +27,7 @@ export const getTeacherDashboard = async (req: any, res: Response) => {
       SELECT SUM(c.price) as total 
       FROM enrollments e
       JOIN courses c ON e.course_id = c.id
-      WHERE c.teacher_id = ? AND e.status = 'completed'
+      WHERE c.teacher_id = ? AND e.status IN ('active', 'completed')
     `, [teacherId]);
     const totalRevenue = revenueRows[0].total || 0;
 

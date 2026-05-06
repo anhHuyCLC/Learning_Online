@@ -6,10 +6,11 @@ import connectDB from "../config/db";
 export const getCourses = async (req: any, res: any): Promise<void> => {
     try {
         const courses = await listCourses();
+        
         res.status(200).json({
             success: true,
             message: "Lấy danh sách khóa học thành công",
-            courses
+            courses: courses
         });
     } catch (error) {
         console.error("Get courses error:", error);
@@ -38,7 +39,7 @@ export const getCourseById = async (req: any, res: any): Promise<void> => {
 
         // Fetch lessons for the course and check if a quiz exists for each lesson
         const [lessons]: any = await db.execute(
-            `SELECT l.id, l.title, l.lesson_order, l.video_url, q.id IS NOT NULL AS has_quiz 
+            `SELECT l.id, l.title, l.content, l.duration, l.lesson_order, l.video_url, q.id IS NOT NULL AS has_quiz 
              FROM lessons l
              LEFT JOIN quizzes q ON l.id = q.lesson_id
              WHERE l.course_id = ?
@@ -48,6 +49,25 @@ export const getCourseById = async (req: any, res: any): Promise<void> => {
 
         course.lessons = lessons;
         
+        // 1. Lấy tổng số học viên đăng ký (student_count)
+        const [enrollmentStats]: any = await db.execute(
+            "SELECT COUNT(*) as student_count FROM enrollments WHERE course_id = ?", [id]
+        );
+        course.student_count = enrollmentStats[0].student_count || 0;
+
+        // 2. Lấy điểm đánh giá trung bình và tổng số lượt đánh giá
+        const [reviewStats]: any = await db.execute(
+            "SELECT AVG(rating) as avg_rating, COUNT(id) as review_count FROM reviews WHERE course_id = ?", [id]
+        );
+        course.avg_rating = reviewStats[0].avg_rating ? Number(reviewStats[0].avg_rating).toFixed(1) : "0.0";
+        course.review_count = reviewStats[0].review_count || 0;
+
+        // 3. Lấy danh sách 10 đánh giá mới nhất để hiển thị
+        const [reviews]: any = await db.execute(
+            "SELECT r.*, u.name as user_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.course_id = ? ORDER BY r.created_at DESC LIMIT 10", [id]
+        );
+        course.reviews = reviews;
+
         res.status(200).json({
             success: true,
             message: "Lấy khóa học thành công",
@@ -64,12 +84,12 @@ export const getCourseById = async (req: any, res: any): Promise<void> => {
 
 export const createCourse = async (req: any, res: any): Promise<void> => {
     try {
-        const { name, description, price } = req.body;
+        const { title, description, price, duration, detail_description, image, category_id } = req.body;
         const teacherId = req.user.id;
         const userRole = req.user.role;
-        const imagePath = req.file ? `/${req.file.path.replace(/\\/g, "/")}` : null;
+        const imagePath = req.file ? `/${req.file.path.replace(/\\/g, "/")}` : (image || null);
         
-        if (!name || !description) {
+        if (!title || !description) {
             res.status(400).json({
                 success: false,
                 message: "Vui lòng nhập đầy đủ thông tin"
@@ -85,9 +105,15 @@ export const createCourse = async (req: any, res: any): Promise<void> => {
         }
         
         const db = await connectDB();
+        
+        // Ép kiểu an toàn các trường số để tránh lỗi MySQL Incorrect integer/decimal value
+        const parsedPrice = price ? Number(price) : 0;
+        const parsedDuration = duration ? Number(duration) : 0;
+        const parsedCategoryId = (category_id && category_id !== "null" && category_id !== "undefined" && !isNaN(Number(category_id))) ? Number(category_id) : null;
+
         await db.execute(
-            "INSERT INTO courses (name, description, price, teacher_id, image, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
-            [name, description, price || 0, teacherId, imagePath]
+            "INSERT INTO courses (title, description, detail_description, price, duration, teacher_id, category_id, image, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+            [title, description, detail_description || null, parsedPrice, parsedDuration, teacherId, parsedCategoryId, imagePath]
         );
 
         const [newCourse]: any = await db.execute("SELECT * FROM courses WHERE id = LAST_INSERT_ID()");
@@ -107,55 +133,81 @@ export const createCourse = async (req: any, res: any): Promise<void> => {
 };
 
 export const updateCourse = async (req: any, res: any): Promise<void> => {
-    try {
-        const { id } = req.params;
-        const { name, description, price } = req.body;
-        const userId = req.user.id;
-        const userRole = req.user.role;
-        const imagePath = req.file ? `/${req.file.path.replace(/\\/g, "/")}` : null;
-        
-        const db = await connectDB();
+  try {
+    const { id } = req.params;
+    const { title, description, price, duration, image, detail_description, category_id } = req.body;
 
-        // Xác minh quyền sở hữu hoặc vai trò admin
-        const [courses]: any = await db.execute("SELECT teacher_id FROM courses WHERE id = ?", [id]);
-        if (courses.length === 0) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
-        }
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    const db = await connectDB();
+
+    // Check course tồn tại
+    const [courses]: any = await db.execute(
+      "SELECT teacher_id, image FROM courses WHERE id = ?",
+      [id]
+    );
+
+    if (courses.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khóa học",
+      });
+    }
 
         const course = courses[0];
-        if (course.teacher_id !== userId && userRole !== 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: "Bạn không có quyền cập nhật khóa học này"
-            });
-        }
 
-        // Build the query dynamically
-        let query = "UPDATE courses SET name = ?, description = ?, price = ?";
-        const params: (string | number | null)[] = [name, description, price];
-
-        if (imagePath) {
-            query += ", image = ?";
-            params.push(imagePath);
-        }
-
-        query += " WHERE id = ?";
-        params.push(id);
-
-        await db.execute(query, params);
-        
-        res.status(200).json({
-            success: true,
-            message: "Cập nhật khóa học thành công",
-            course: { id, name, description, price, image: imagePath || course.image }
-        });
-    } catch (error) {
-        console.error("Update course error:", error);
-        res.status(500).json({
-            success: false,
-            message: "Lỗi server"
-        });
+        // Check quyền
+    if (course.teacher_id !== userId && userRole !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không có quyền cập nhật khóa học này",
+      });
     }
+
+    // Xử lý ảnh
+    let imagePath = course.image;
+
+    if (req.file) {
+      imagePath = `/${req.file.path.replace(/\\/g, "/")}`;
+    } else if (image) {
+      imagePath = image;
+    } else if (image !== undefined) {
+      // Nếu có truyền image lên nhưng là chuỗi rỗng thì đưa về null để xoá ảnh cũ
+      imagePath = image || null;
+    }
+
+    // Update DB
+    // Ép kiểu an toàn
+    const parsedPrice = price ? Number(price) : 0;
+    const parsedDuration = duration ? Number(duration) : 0;
+    const parsedCategoryId = (category_id && category_id !== "null" && category_id !== "undefined" && !isNaN(Number(category_id))) ? Number(category_id) : null;
+
+    await db.execute(
+      "UPDATE courses SET title = ?, description = ?, price = ?, duration = ?, image = ?, detail_description = ?, category_id = ? WHERE id = ?",
+      [title, description, parsedPrice, parsedDuration, imagePath, detail_description, parsedCategoryId, id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật khóa học thành công",
+      course: {
+        id,
+        title,
+        description,
+        price,
+        image: imagePath,
+        detail_description,
+        category_id
+      },
+    });
+  } catch (error) {
+    console.error("Update course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+    });
+  }
 };
 
 export const deleteCourse = async (req: any, res: any): Promise<void> => {
@@ -238,10 +290,11 @@ export const getTeacherCourses = async (req: any, res: any): Promise<void> => {
         }
 
         const courses = await listCoursesByTeacher(teacherId);
+
         res.status(200).json({
             success: true,
             message: "Lấy danh sách khóa học của giảng viên thành công",
-            courses 
+            courses: courses 
         });
     } catch (error) {
         console.error("Get teacher courses error:", error);
@@ -256,7 +309,7 @@ export const getTeacherCourses = async (req: any, res: any): Promise<void> => {
 export const createLesson = async (req: any, res: any) => {
     try {
         const { courseId } = req.params;
-        const { title, video_url } = req.body;
+        const { title, video_url, content, duration } = req.body;
         const teacherId = req.user.id;
 
         // Verify teacher owns the course
@@ -271,11 +324,11 @@ export const createLesson = async (req: any, res: any) => {
         const lesson_order = (orderRows[0].max_order || 0) + 1;
 
         const [result]: any = await db.execute(
-            "INSERT INTO lessons (course_id, title, video_url, lesson_order) VALUES (?, ?, ?, ?)",
-            [courseId, title, video_url, lesson_order]
+            "INSERT INTO lessons (course_id, title, video_url, content, duration, lesson_order) VALUES (?, ?, ?, ?, ?, ?)",
+            [courseId, title, video_url || null, content || null, duration || null, lesson_order]
         );
 
-        res.status(201).json({ success: true, data: { id: result.insertId, title, video_url, lesson_order } });
+        res.status(201).json({ success: true, data: { id: result.insertId, title, video_url, content, duration, lesson_order } });
     } catch (error) {
         console.error("Create lesson error:", error);
         res.status(500).json({ success: false, message: "Error creating lesson" });
@@ -285,7 +338,7 @@ export const createLesson = async (req: any, res: any) => {
 export const updateLesson = async (req: any, res: any) => {
     try {
         const { lessonId } = req.params;
-        const { title, video_url } = req.body;
+        const { title, video_url, content, duration } = req.body;
         const teacherId = req.user.id;
 
         // Verify teacher owns the course this lesson belongs to
@@ -297,7 +350,7 @@ export const updateLesson = async (req: any, res: any) => {
             return res.status(403).json({ success: false, message: "Unauthorized" });
         }
 
-        await db.execute("UPDATE lessons SET title = ?, video_url = ? WHERE id = ?", [title, video_url, lessonId]);
+        await db.execute("UPDATE lessons SET title = ?, video_url = ?, content = ?, duration = ? WHERE id = ?", [title, video_url || null, content || null, duration || null, lessonId]);
         res.json({ success: true, message: "Lesson updated" });
     } catch (error) {
         res.status(500).json({ success: false, message: "Error updating lesson" });
@@ -322,5 +375,53 @@ export const deleteLesson = async (req: any, res: any) => {
         res.json({ success: true, message: "Lesson deleted" });
     } catch (error) {
         res.status(500).json({ success: false, message: "Error deleting lesson" });
+    }
+};
+
+export const createReview = async (req: any, res: any): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { rating, comment } = req.body;
+        const userId = req.user.id;
+
+        if (!rating || rating < 1 || rating > 5) {
+            res.status(400).json({ success: false, message: "Vui lòng chọn số sao từ 1 đến 5" });
+            return;
+        }
+
+        const db = await connectDB();
+        
+        // Kiểm tra xem đã đăng ký chưa
+        const [enrollments]: any = await db.execute(
+            "SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?",
+            [userId, id]
+        );
+        if (enrollments.length === 0) {
+            res.status(403).json({ success: false, message: "Bạn phải đăng ký khóa học mới được đánh giá" });
+            return;
+        }
+
+        // Kiểm tra xem đã từng đánh giá chưa
+        const [existingReviews]: any = await db.execute(
+            "SELECT id FROM reviews WHERE user_id = ? AND course_id = ?",
+            [userId, id]
+        );
+
+        if (existingReviews.length > 0) {
+            await db.execute(
+                "UPDATE reviews SET rating = ?, comment = ?, created_at = NOW() WHERE id = ?",
+                [rating, comment || null, existingReviews[0].id]
+            );
+        } else {
+            await db.execute(
+                "INSERT INTO reviews (user_id, course_id, rating, comment) VALUES (?, ?, ?, ?)",
+                [userId, id, rating, comment || null]
+            );
+        }
+
+        res.status(201).json({ success: true, message: "Đánh giá thành công" });
+    } catch (error) {
+        console.error("Create review error:", error);
+        res.status(500).json({ success: false, message: "Lỗi server" });
     }
 };

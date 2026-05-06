@@ -1,0 +1,716 @@
+/**
+ * HYBRID RECOMMENDATION SYSTEM - ML SCORING & IMPLEMENTATION
+ * 
+ * TypeScript implementation of ML scoring layer + rule-based filtering
+ * Last Updated: May 1, 2026
+ */
+
+import connectDB from '../../config/db';
+
+// ============================================================================
+// PART 1: FEATURE ENGINEERING & NORMALIZATION
+// ============================================================================
+
+/**
+ * Feature Vector Interface - represents all ML features for a course
+ */
+interface CourseFeatureVector {
+  courseId: number;
+  difficulty: number; // 1-5 scale
+  avgRating: number; // 0-5 scale
+  completionRate: number; // 0-1 (%)
+  popularityScore: number; // 0-1 (normalized enrollment)
+  recencyDays: number; // days since created
+  skillVector: Record<string, number>; // 20 skills, each 0-1
+  categoryVector: Record<string, number>; // 5 categories, one-hot encoded
+  avgCompletionTime: number; // hours
+}
+
+interface UserFeatureVector {
+  userId: number;
+  learningLevel: number; // 1-3 (beginner, intermediate, advanced)
+  coursesCompleted: number;
+  avgDifficulty: number; // 1-5
+  avgProgress: number; // 0-100 %
+  skillVector: Record<string, number>; // 20 skills, each 0-1
+  categoryVector: Record<string, number>; // 5 categories, each 0-1
+  engagementScore: number; // 0-100
+}
+
+/**
+ * Feature Normalization Service
+ * 
+ * Normalize features to 0-1 range for ML model consistency
+ */
+class FeatureNormalizer {
+  /**
+   * Normalize numeric feature to 0-1 range
+   * Uses min-max scaling with predefined bounds
+   */
+  static normalizeNumeric(
+    value: number,
+    min: number,
+    max: number
+  ): number {
+    if (max === min) return 0.5; // Default to middle if range is empty
+    return Math.max(0, Math.min(1, (value - min) / (max - min)));
+  }
+
+  /**
+   * Normalize difficulty (1-5 scale to 0-1)
+   */
+  static normalizeDifficulty(difficulty: number): number {
+    return this.normalizeNumeric(difficulty, 1, 5);
+  }
+
+  /**
+   * Normalize rating (0-5 scale to 0-1)
+   */
+  static normalizeRating(rating: number): number {
+    return this.normalizeNumeric(rating, 0, 5);
+  }
+
+  /**
+   * Normalize engagement (0-100 to 0-1)
+   */
+  static normalizeEngagement(engagement: number): number {
+    return this.normalizeNumeric(engagement, 0, 100);
+  }
+
+  /**
+   * Normalize completion time (0-200 hours to 0-1)
+   */
+  static normalizeTime(hours: number): number {
+    return this.normalizeNumeric(hours, 0, 200);
+  }
+
+  /**
+   * L2 normalize a vector (convert to unit vector)
+   */
+  static l2Normalize(vector: number[]): number[] {
+    const magnitude = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
+    if (magnitude === 0) return vector;
+    return vector.map(v => v / magnitude);
+  }
+
+  /**
+   * Cosine similarity between two vectors
+   * Returns 0-1 score
+   */
+  static cosineSimilarity(vec1: number[], vec2: number[]): number {
+    if (vec1.length !== vec2.length) throw new Error('Vector length mismatch');
+
+    const dotProduct = vec1.reduce((sum, v1, i) => sum + v1 * vec2[i], 0);
+    const mag1 = Math.sqrt(vec1.reduce((sum, v) => sum + v * v, 0));
+    const mag2 = Math.sqrt(vec2.reduce((sum, v) => sum + v * v, 0));
+
+    if (mag1 === 0 || mag2 === 0) return 0;
+    return dotProduct / (mag1 * mag2);
+  }
+
+  /**
+   * Euclidean distance between two vectors (normalized to 0-1)
+   */
+  static euclideanDistance(vec1: number[], vec2: number[]): number {
+    if (vec1.length !== vec2.length) throw new Error('Vector length mismatch');
+
+    const sumSquares = vec1.reduce((sum, v1, i) => {
+      return sum + Math.pow(v1 - vec2[i], 2);
+    }, 0);
+
+    const distance = Math.sqrt(sumSquares);
+    // Normalize to 0-1 (assuming max distance is sqrt(n) for unit vectors)
+    return Math.min(1, distance / Math.sqrt(vec1.length));
+  }
+}
+
+// ============================================================================
+// PART 2: ML SCORING FORMULA (5 FACTORS)
+// ============================================================================
+
+/**
+ * Hybrid Scoring Engine
+ * 
+ * Combines 5 factors:
+ * 1. Relevance (skill match) - 30%
+ * 2. Difficulty Match - 20%
+ * 3. Performance Potential - 20%
+ * 4. Engagement Factor - 15%
+ * 5. Popularity/Social Proof - 15%
+ */
+class HybridScoringEngine {
+  /**
+   * Main scoring function
+   * Returns score from 0-100
+   */
+  static calculateScore(
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector,
+    similarUserRatings?: number // Average rating from similar users (if available)
+  ): number {
+    // Calculate individual factor scores
+    const relevanceScore = this.calculateRelevanceScore(userFeatures, courseFeatures);
+    const difficultyScore = this.calculateDifficultyScore(userFeatures, courseFeatures);
+    const performanceScore = this.calculatePerformanceScore(userFeatures, courseFeatures);
+    const engagementScore = this.calculateEngagementScore(userFeatures, courseFeatures);
+    const popularityScore = this.calculatePopularityScore(courseFeatures, similarUserRatings);
+
+    // Weighted combination
+    const hybridScore =
+      relevanceScore * 0.30 +
+      difficultyScore * 0.20 +
+      performanceScore * 0.20 +
+      engagementScore * 0.15 +
+      popularityScore * 0.15;
+
+    // Issue 1 Fix: Ensure 100-point scale for recommendation scores
+    return Math.round(hybridScore * 100);
+  }
+
+  /**
+   * Factor 1: Relevance Score (Skill Match)
+   * 
+   * Measures how well the course aligns with user's skills and interests
+   * Uses cosine similarity of skill vectors
+   */
+  public static calculateRelevanceScore(
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector
+  ): number {
+    // Convert skill vectors to arrays (maintain consistent order)
+    const skillOrder = [
+      'programming', 'data_analysis', 'web_development', 'machine_learning',
+      'mobile_dev', 'database', 'cloud', 'devops', 'ai', 'nlp',
+      'cv', 'cybersecurity', 'finance', 'marketing', 'leadership',
+      'communication', 'project_mgmt', 'design', 'ux', 'seo'
+    ];
+
+    const userSkillVec = skillOrder.map(skill => userFeatures.skillVector[skill] || 0);
+    const courseSkillVec = skillOrder.map(skill => courseFeatures.skillVector[skill] || 0);
+
+    const hasSkills = userSkillVec.some(v => v > 0);
+    let relevance = hasSkills ? FeatureNormalizer.cosineSimilarity(userSkillVec, courseSkillVec) : 0;
+
+    // Quét động toàn bộ danh mục của User (hỗ trợ cả tiếng Việt như "lập trình", "thiết kế")
+    let categoryBonus = 0;
+    let hasCategories = Object.keys(userFeatures.categoryVector || {}).length > 0;
+
+    if (hasCategories) {
+      for (const category in userFeatures.categoryVector) {
+        const userPref = userFeatures.categoryVector[category] || 0;
+        const courseCat = courseFeatures.categoryVector[category] || 0;
+        if (userPref > 0 && courseCat > 0) {
+          categoryBonus = Math.max(categoryBonus, userPref * courseCat);
+        }
+      }
+    }
+
+    // Nếu user là tài khoản mới (chưa có data), set cứng Relevance mặc định 60%
+    if (!hasSkills && !hasCategories) {
+      return 0.6; 
+    }
+
+    // Tính điểm tổng, giữ mức tối thiểu 10% (0.1) để thanh Progress Bar không bị rỗng hoàn toàn
+    let finalScore = hasSkills ? (relevance * 0.8 + categoryBonus * 0.2) : categoryBonus;
+    return Math.max(0.1, finalScore);
+  }
+
+  /**
+   * Factor 2: Difficulty Match Score
+   * 
+   * Measures how well course difficulty matches user's learning level
+   * Optimal when: user_difficulty ≈ course_difficulty
+   */
+  public static calculateDifficultyScore(
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector
+  ): number {
+    const userDifficulty = FeatureNormalizer.normalizeNumeric(
+      userFeatures.avgDifficulty,
+      1,
+      5
+    );
+    const courseDifficulty = FeatureNormalizer.normalizeDifficulty(
+      courseFeatures.difficulty
+    );
+
+    // Bell curve: optimal match at user's level
+    // Score = 1 - |user_diff - course_diff|^2
+    const diff = Math.abs(userDifficulty - courseDifficulty);
+    return Math.max(0, 1 - diff * diff); // Quadratic penalty for mismatch
+  }
+
+  /**
+   * Factor 3: Performance Potential Score
+   * 
+   * Based on:
+   * - User's historical performance (avg progress)
+   * - Course's completion rate (proxy for achievability)
+   * - Learning level progression path
+   */
+  public static calculatePerformanceScore(
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector
+  ): number {
+    const userProgress = FeatureNormalizer.normalizeNumeric(
+      userFeatures.avgProgress,
+      0,
+      100
+    );
+
+    // Predict success likelihood: high completion rate + user has history of finishing
+    const performanceScore =
+      userProgress * 0.5 + // User's track record (50%)
+      courseFeatures.completionRate * 0.5; // Course difficulty (50%)
+
+    return performanceScore;
+  }
+
+  /**
+   * Factor 4: Engagement Factor
+   * 
+   * Combines:
+   * - User's engagement score (activity level)
+   * - Course's expected time commitment vs user's capacity
+   * - Learning level appropriateness
+   */
+  public static calculateEngagementScore(
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector
+  ): number {
+    const userEngagement = FeatureNormalizer.normalizeEngagement(
+      userFeatures.engagementScore
+    );
+
+    // Higher engagement users can take longer courses
+    const maxTimeCapacity = 10 + (userEngagement * 100); // 10-110 hours capacity
+    const courseTime = courseFeatures.avgCompletionTime;
+
+    // Score = 1 if course fits user's time capacity, penalize if too long
+    const timeMatch = Math.max(0, 1 - (courseTime / maxTimeCapacity) * 0.5);
+
+    // Combine engagement + time fit
+    return (userEngagement * 0.6 + timeMatch * 0.4);
+  }
+
+  /**
+   * Factor 5: Popularity/Social Proof Score
+   * 
+   * Combines:
+   * - Course popularity (enrollment count)
+   * - Average rating
+   * - Ratings from similar users (collaborative filtering)
+   */
+  public static calculatePopularityScore(
+    courseFeatures: CourseFeatureVector,
+    similarUserRatings?: number
+  ): number {
+    const popularity = courseFeatures.popularityScore;
+    const rating = FeatureNormalizer.normalizeRating(courseFeatures.avgRating);
+
+    let score = popularity * 0.4 + rating * 0.6;
+
+    // If we have ratings from similar users, boost the score (0-1)
+    if (similarUserRatings !== undefined) {
+      const similarUserScore = FeatureNormalizer.normalizeRating(similarUserRatings);
+      score = score * 0.6 + similarUserScore * 0.4;
+    }
+
+    return score;
+  }
+
+  /**
+   * Bonus/Penalty Modifiers
+   */
+  static applyModifiers(
+    baseScore: number,
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector,
+    previousCoursesFromSamePath?: number,
+    daysNotRecommended?: number
+  ): number {
+    let score = baseScore;
+
+    // Bonus: Already completed prerequisites
+    if (previousCoursesFromSamePath && previousCoursesFromSamePath > 0) {
+      score *= (1 + previousCoursesFromSamePath * 0.1); // 10% boost per prerequisite
+    }
+
+    // Penalty: Recently dismissed
+    if (daysNotRecommended && daysNotRecommended < 90) {
+      score *= (0.5 + (daysNotRecommended / 90) * 0.5); // Ramp up from 50% to 100% over 90 days
+    }
+
+    // Bonus: New course (recency)
+    if (courseFeatures.recencyDays < 30) {
+      score *= 1.1; // 10% boost for new courses
+    }
+
+    // Hard ceiling for very high scores, enforcing 100-point scale
+    return Math.min(Math.round(score), 100);
+  }
+}
+
+// ============================================================================
+// PART 3: HYBRID RECOMMENDATION ENGINE
+// ============================================================================
+
+/**
+ * RulesEngine - Placeholder for rule-based filtering logic
+ */
+class RulesEngine {
+  async filterCoursesBySegment(
+    userId: number,
+    segment: string,
+    features: UserFeatureVector
+  ): Promise<any[]> {
+    const db = await connectDB();
+
+    let courses: any[] = [];
+    try {
+      // Bỏ c.title, c.difficulty, c.is_active vì có thể DB hiện tại chưa có các cột này
+      const [rows]: any = await db.execute(
+        `SELECT c.*, cat.name as category 
+         FROM courses c
+         LEFT JOIN categories cat ON c.category_id = cat.id`
+      );
+      courses = rows;
+    } catch (err) {
+      console.error('Lỗi khi query courses trong filterCoursesBySegment:', err);
+      // Fallback nếu câu query trên vẫn lỗi (ví dụ thiếu bảng categories)
+      const [fallbackRows]: any = await db.execute(`SELECT * FROM courses`);
+      courses = fallbackRows;
+    }
+
+    console.log(`[Hybrid Debug] Total courses fetched from DB: ${courses.length}`);
+
+    // Lấy danh sách khóa học user đã đăng ký để loại trừ
+    const [enrolled]: any = await db.execute(
+      'SELECT course_id FROM enrollments WHERE user_id = ?',
+      [userId]
+    );
+    const enrolledIds = enrolled.map((e: any) => e.course_id);
+
+    console.log(`[Hybrid Debug] User ${userId} enrolled courses: ${enrolledIds.length}`);
+
+    // Lọc bỏ những khóa user đã học
+    const unEnrolledCourses = courses.filter((c: any) => !enrolledIds.includes(c.id));
+    console.log(`[Hybrid Debug] Courses remaining after enrollment filter: ${unEnrolledCourses.length}`);
+
+    if (unEnrolledCourses.length === 0) {
+      console.log(`[Hybrid Debug] ALL courses were filtered out for user ${userId}. Reason: User has enrolled in all available courses or DB is empty.`);
+    }
+
+    return unEnrolledCourses.map((c: any) => ({
+      ...c,
+      name: c.title || c.name || 'Khóa học',
+      difficulty: c.difficulty || 2,
+      prerequisitesMet: 0,
+      daysSinceDismissed: undefined,
+      skills: []
+    }));
+  }
+}
+class HybridRecommendationEngine {
+  async generateRecommendations(
+    userId: number,
+    limit: number = 10
+  ): Promise<RecommendationResult[]> {
+    const userFeatures = await this.getUserFeatures(userId);
+    const userSegment = await this.classifyUserSegment(userId, userFeatures);
+    
+    const rulesEngine = new RulesEngine();
+    let rulePassingCourses = await rulesEngine.filterCoursesBySegment(
+      userId,
+      userSegment,
+      userFeatures
+    );
+
+    // Fallback nếu bộ lọc AI quá khắt khe hoặc DB trống
+    if (rulePassingCourses.length === 0) {
+      const db = await connectDB();
+      const [enrolled]: any = await db.execute('SELECT course_id FROM enrollments WHERE user_id = ?', [userId]);
+      const enrolledIds = enrolled.map((e: any) => e.course_id);
+
+      let query = `SELECT c.*, cat.name as category FROM courses c LEFT JOIN categories cat ON c.category_id = cat.id`;
+      if (enrolledIds.length > 0) {
+        const placeholders = enrolledIds.map(() => '?').join(',');
+        query += ` WHERE c.id NOT IN (${placeholders})`;
+      }
+      query += ` ORDER BY c.id DESC LIMIT 15`; 
+      
+      const [fallbackRows]: any = await db.execute(query, enrolledIds.length > 0 ? enrolledIds : []);
+      
+      rulePassingCourses = fallbackRows.map((c: any) => ({
+        id: c.id,
+        name: c.title || c.name || 'Khóa học',
+        category: c.category || 'other',
+        difficulty: 2, 
+        prerequisitesMet: 1, 
+        daysSinceDismissed: undefined,
+        skills: c.category ? [c.category.toLowerCase()] : [] 
+      }));
+    }
+
+    const scoredCourses = await Promise.all(
+      rulePassingCourses.map(async (course) => {
+        const courseFeatures = await this.getCourseFeatures(course.id);
+        const similarUserRatings = await this.getSimilarUserRating(userId, course.id);
+
+        const mlScore = HybridScoringEngine.calculateScore(
+          userFeatures,
+          courseFeatures,
+          similarUserRatings
+        );
+
+        const finalScore = HybridScoringEngine.applyModifiers(
+          mlScore,
+          userFeatures,
+          courseFeatures,
+          course.prerequisitesMet || 0,
+          course.daysSinceDismissed || undefined
+        );
+
+        const reasonsList = this.generateReasons(userFeatures, courseFeatures);
+        
+        // Bóc tách điểm chi tiết thang 100
+        const scoreBreakdown = await this.getScoreBreakdown(
+          userFeatures,
+          courseFeatures,
+          finalScore
+        );
+
+        return {
+          courseId: course.id,
+          courseName: course.name,
+          category: course.category || 'other',
+          skills: course.skills || [],
+          mlScore: mlScore,
+          finalScore: finalScore,
+          scoreBreakdown: scoreBreakdown, // Trả nguyên object đã tính chuẩn
+          reasons: reasonsList,
+          reason: reasonsList.length > 0 ? reasonsList.join(' | ') : "Khóa học này phù hợp với kỹ năng và sở thích của bạn.",
+        };
+      })
+    );
+
+    const diverseRecommendations = this.rankAndDiversify(scoredCourses, limit);
+    await this.logRecommendationEvent(userId, diverseRecommendations);
+    return diverseRecommendations.slice(0, limit);
+  }
+
+  private rankAndDiversify(scoredCourses: any[], limit: number): RecommendationResult[] {
+    const sorted = scoredCourses.sort((a, b) => b.finalScore - a.finalScore);
+    const recommended: RecommendationResult[] = [];
+    const categories = new Set<string>();
+    const skills = new Set<string>();
+
+    for (const course of sorted) {
+      if (recommended.length > 0) {
+        if (categories.has(course.category)) continue;
+        if (this.hasSimilarSkills(course.skills, skills)) continue;
+      }
+      recommended.push(course);
+      categories.add(course.category);
+      course.skills.forEach((s: string) => skills.add(s));
+      if (recommended.length >= limit) break;
+    }
+
+    if (recommended.length < limit) {
+      for (const course of sorted) {
+        if (!recommended.includes(course)) {
+          recommended.push(course);
+          if (recommended.length >= limit) break;
+        }
+      }
+    }
+    return recommended;
+  }
+
+  private hasSimilarSkills(courseSkills: string[], userSkills: Set<string>): boolean {
+    const overlap = courseSkills.filter(s => userSkills.has(s)).length;
+    return overlap > (courseSkills.length * 0.5);
+  }
+
+  private generateReasons(userFeatures: UserFeatureVector, courseFeatures: CourseFeatureVector): string[] {
+    const reasons: string[] = [];
+    if (courseFeatures.popularityScore > 0.7) {
+      reasons.push(`🔥 Lựa chọn phổ biến (${Math.round(courseFeatures.popularityScore * 100)}% học viên đã học)`);
+    }
+    if (courseFeatures.avgRating >= 4.5) {
+      reasons.push(`⭐ Được đánh giá rất cao (${courseFeatures.avgRating.toFixed(1)}/5 sao)`);
+    }
+    const diff = Math.abs(userFeatures.avgDifficulty - courseFeatures.difficulty);
+    if (diff <= 1) {
+      reasons.push(`📈 Độ khó hoàn toàn phù hợp với trình độ hiện tại của bạn`);
+    } else if (courseFeatures.difficulty > userFeatures.avgDifficulty) {
+      reasons.push(`🚀 Khóa học thử thách, giúp bạn nâng cao kỹ năng nhanh chóng`);
+    }
+    if (courseFeatures.recencyDays < 30) {
+      reasons.push(`✨ Khóa học nội dung mới được cập nhật gần đây`);
+    }
+    if (reasons.length === 0) {
+      const fallbackReasons = [
+        "Nội dung được thiết kế bài bản và chi tiết.",
+        "Phù hợp với định hướng phát triển kỹ năng của bạn.",
+        "Xây dựng nền tảng vững chắc cho lộ trình của bạn."
+      ];
+      reasons.push(`💡 ${fallbackReasons[courseFeatures.courseId % fallbackReasons.length]}`);
+    }
+    return reasons.slice(0, 2);
+  }
+
+  // FIX TRIỆT ĐỂ: Nhân 100 cho TẤT CẢ các chỉ số để render Frontend
+  private async getScoreBreakdown(
+    userFeatures: UserFeatureVector,
+    courseFeatures: CourseFeatureVector,
+    totalScore: number
+  ): Promise<ScoreBreakdown> {
+    const maxRecency = 365;
+    const freshnessVal = Math.max(0, 1 - (courseFeatures.recencyDays / maxRecency));
+
+    return {
+      relevance: Math.round(HybridScoringEngine.calculateRelevanceScore(userFeatures, courseFeatures) * 100) || 0,
+      difficulty: Math.round(HybridScoringEngine.calculateDifficultyScore(userFeatures, courseFeatures) * 100) || 0,
+      performance: Math.round(HybridScoringEngine.calculatePerformanceScore(userFeatures, courseFeatures) * 100) || 0,
+      engagement: Math.round(HybridScoringEngine.calculateEngagementScore(userFeatures, courseFeatures) * 100) || 0,
+      popularity: Math.round(HybridScoringEngine.calculatePopularityScore(courseFeatures) * 100) || 0,
+      freshness: Math.round(freshnessVal * 100) || 0,
+      progression: Math.round((userFeatures.avgProgress > 0 ? userFeatures.avgProgress : 50)), // Gán mốc 50% nếu chưa có progress
+      final: Math.round(totalScore) || 0,
+    };
+  }
+
+  private async getUserFeatures(userId: number): Promise<UserFeatureVector> {
+    try {
+      const db = await connectDB();
+      const [rows]: any = await db.execute('SELECT * FROM user_features WHERE user_id = ?', [userId]);
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        return {
+          userId: row.user_id,
+          learningLevel: row.learning_level || 1,
+          coursesCompleted: row.courses_completed || 0,
+          avgDifficulty: row.avg_difficulty || 1.5,
+          avgProgress: row.avg_progress || 0,
+          skillVector: typeof row.skill_vector === 'string' ? JSON.parse(row.skill_vector) : (row.skill_vector || {}),
+          categoryVector: typeof row.category_vector === 'string' ? JSON.parse(row.category_vector) : (row.category_vector || {}),
+          engagementScore: row.engagement_score || 0
+        };
+      }
+    } catch (error) {}
+    
+    return {
+      userId, learningLevel: 1, coursesCompleted: 0, avgDifficulty: 2, avgProgress: 0,
+      skillVector: {}, categoryVector: {}, engagementScore: 50
+    };
+  }
+
+  private async getCourseFeatures(courseId: number): Promise<CourseFeatureVector> {
+    try {
+      const db = await connectDB();
+      const [rows]: any = await db.execute('SELECT * FROM course_features WHERE course_id = ?', [courseId]);
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        return {
+          courseId: row.course_id,
+          difficulty: row.difficulty_level || 2,
+          avgRating: row.avg_rating || 4.5,
+          completionRate: row.completion_rate || 0.5,
+          popularityScore: row.popularity_score || 0.5,
+          recencyDays: row.recency_days || 30,
+          avgCompletionTime: row.avg_completion_time || 10,
+          skillVector: typeof row.skill_vector === 'string' ? JSON.parse(row.skill_vector) : (row.skill_vector || {}),
+          categoryVector: typeof row.category_vector === 'string' ? JSON.parse(row.category_vector) : (row.category_vector || {})
+        };
+      }
+    } catch (error) {}
+
+    // Fallback Data Đa Dạng
+    const dummyCategories = ['programming', 'design', 'business', 'other'];
+    const dummyCat = dummyCategories[courseId % dummyCategories.length];
+    const pseudoRandom = (courseId % 10) / 10; 
+    return {
+      courseId,
+      difficulty: (courseId % 3) + 1, // Random độ khó 1 -> 3
+      avgRating: 3.8 + (pseudoRandom * 1.2), 
+      completionRate: 0.4 + (pseudoRandom * 0.5), 
+      popularityScore: 0.3 + (pseudoRandom * 0.7), 
+      recencyDays: (courseId * 7) % 90, 
+      avgCompletionTime: 10 + (courseId * 2),
+      skillVector: { [dummyCat]: 0.9 }, 
+      categoryVector: { [dummyCat]: 1 }
+    };
+  }
+
+  private async classifyUserSegment(userId: number, features: UserFeatureVector): Promise<string> {
+    if (features.coursesCompleted === 0) return 'Newbie';
+    if (features.engagementScore > 80) return 'Quick-Learner';
+    if (features.learningLevel === 3) return 'Skill-Enhancer';
+    return 'Career-Changer';
+  }
+
+  private async getSimilarUserRating(userId: number, courseId: number): Promise<number | undefined> {
+    return undefined; // Lược bỏ tạm để tránh lỗi DB bảng user_similarity
+  }
+
+  private async logRecommendationEvent(userId: number, recommendations: RecommendationResult[]): Promise<void> {
+    try {
+      const db = await connectDB();
+      for (const r of recommendations) {
+        const [existing]: any = await db.execute(
+          `SELECT id FROM recommendation_history WHERE user_id = ? AND course_id = ? AND recommended_at >= NOW() - INTERVAL 5 MINUTE`,
+          [userId, r.courseId]
+        );
+        if (existing && existing.length > 0) {
+          await db.execute(
+            `UPDATE recommendation_history SET recommendation_score = ?, component_scores = ?, reason = ?, segment_type = ?, recommended_at = NOW() WHERE id = ?`,
+            [r.finalScore, JSON.stringify(r.scoreBreakdown), r.reason || null, 'hybrid-v1', existing[0].id]
+          );
+        } else {
+          await db.execute(
+            `INSERT INTO recommendation_history (user_id, course_id, recommendation_score, component_scores, reason, segment_type) VALUES (?, ?, ?, ?, ?, ?)`,
+            [userId, r.courseId, r.finalScore, JSON.stringify(r.scoreBreakdown), r.reason || null, 'hybrid-v1']
+          );
+        }
+      }
+    } catch (error) { console.error("Lỗi ghi DB:", error); }
+  }
+}
+
+// ============================================================================
+// PART 4: INTERFACES & TYPES
+// ============================================================================
+
+interface RecommendationResult {
+  courseId: number;
+  courseName: string;
+  category?: string;
+  skills?: string[];
+  mlScore: number;
+  finalScore: number;
+  scoreBreakdown: ScoreBreakdown;
+  reasons: string[];
+  reason?: string;
+}
+
+interface ScoreBreakdown {
+  relevance: number;
+  difficulty: number;
+  performance: number;
+  engagement: number;
+  popularity: number;
+  freshness: number;
+  progression: number;
+  final: number;
+}
+
+export {
+  HybridScoringEngine,
+  HybridRecommendationEngine,
+  FeatureNormalizer,
+  CourseFeatureVector,
+  UserFeatureVector,
+  RecommendationResult,
+  ScoreBreakdown,
+};

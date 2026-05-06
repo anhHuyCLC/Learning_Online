@@ -5,7 +5,7 @@ export const getCategories = async (req: Request, res: Response) => {
     try {
         const connection: any = await connectDB();
         const [rows] = await connection.execute(`
-            SELECT c.id, c.name, c.description, c.status, COUNT(co.id) as courseCount 
+            SELECT c.id, c.name, c.description, COUNT(co.id) as courseCount 
             FROM categories c 
             LEFT JOIN courses co ON c.id = co.category_id 
             GROUP BY c.id
@@ -19,13 +19,13 @@ export const getCategories = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
     try {
-        const { name, description, status } = req.body;
+        const { name, description } = req.body;
         if (!name) return res.status(400).json({ success: false, message: "Tên danh mục là bắt buộc" });
         
         const connection: any = await connectDB();
         await connection.execute(
-            "INSERT INTO categories (name, description, status) VALUES (?, ?, ?)",
-            [name, description || '', status || 'active']
+            "INSERT INTO categories (name, description) VALUES (?, ?)",
+            [name, description || '']
         );
         res.status(201).json({ success: true, message: "Thêm danh mục thành công" });
     } catch (error) {
@@ -37,12 +37,12 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, description, status } = req.body;
+        const { name, description } = req.body;
         
         const connection: any = await connectDB();
         await connection.execute(
-            "UPDATE categories SET name = ?, description = ?, status = ? WHERE id = ?",
-            [name, description, status, id]
+            "UPDATE categories SET name = ?, description = ? WHERE id = ?",
+            [name, description, id]
         );
         res.status(200).json({ success: true, message: "Cập nhật danh mục thành công" });
     } catch (error) {

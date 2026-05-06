@@ -19,8 +19,8 @@ export const topUpBalance = async (req: Request, res: Response) => {
             [amount, userId]
         );
         await connection.execute(
-            "INSERT INTO transactions (user_id, amount, type, status) VALUES (?, ?, 'top-up', 'completed')",
-            [userId, amount]
+            "INSERT INTO transactions (user_id, amount, payment_method, status) VALUES (?, ?, ?, ?)",
+            [userId, amount, 'top-up', 'completed']
         );
         const [userRows]: any = await connection.execute("SELECT balance FROM users WHERE id = ?", [userId]);
         const newBalance = userRows[0].balance;

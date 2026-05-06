@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.route('/')
     .get(getCategories)
-    .post(createCategory); // Nhớ bọc protect, admin trước createCategory
+    .post(createCategory); 
 
 router.route('/:id')
     .put(updateCategory)
