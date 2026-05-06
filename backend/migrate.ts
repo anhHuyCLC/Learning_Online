@@ -25,30 +25,39 @@ async function runMigration() {
 
     console.log('✅ Connected to database:', process.env.DB_NAME);
 
-    // Read SQL file
-    const sqlPath = path.join(process.cwd(), 'scripts', 'create_recommendation_tables.sql');
-    const sql = fs.readFileSync(sqlPath, 'utf8');
-
-    console.log('📝 Executing SQL migration...');
-
-    // Execute SQL (split by semicolon to handle multiple statements)
-    const statements = sql
-      .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0);
+    // List of SQL migration files to run in order
+    const migrationFiles = [
+      'create_recommendation_tables.sql',
+      'create_comments_table.sql',
+    ];
 
     let successCount = 0;
-    for (const statement of statements) {
-      try {
-        await connection.execute(statement);
-        successCount++;
-      } catch (error: any) {
-        // Log warning but continue (some statements might fail if tables already exist)
-        if (!error.message.includes('already exists')) {
-          console.warn('⚠️ Warning:', error.message);
-        }
-        successCount++;
+    for (const fileName of migrationFiles) {
+      const sqlPath = path.join(process.cwd(), 'scripts', fileName);
+      if (!fs.existsSync(sqlPath)) {
+        console.warn(`⚠️ Migration file not found, skipping: ${fileName}`);
+        continue;
       }
+      console.log(`📝 Executing migration: ${fileName}`);
+      const sql = fs.readFileSync(sqlPath, 'utf8');
+
+      const statements = sql
+        .split(';')
+        .map((stmt: string) => stmt.trim())
+        .filter((stmt: string) => stmt.length > 0);
+
+      for (const statement of statements) {
+        try {
+          await connection.execute(statement);
+          successCount++;
+        } catch (error: any) {
+          if (!error.message.includes('already exists')) {
+            console.warn('⚠️ Warning:', error.message);
+          }
+          successCount++;
+        }
+      }
+      console.log(`  ✅ Done: ${fileName}`);
     }
 
     console.log(`✅ Migration completed! Executed ${successCount} SQL statements`);
@@ -63,6 +72,7 @@ async function runMigration() {
     console.log('  ✓ recommendation_logs');
     console.log('  ✓ recommendation_feedback_log');
     console.log('  ✓ ab_test_recommendations');
+    console.log('  ✓ lesson_comments');
 
     // Verify tables
     const [tables]: any = await connection.execute(`
