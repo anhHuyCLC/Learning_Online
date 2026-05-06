@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { createCourse, updateCourse, fetchCourseById } from "../services/courseService";
+import { getCategories } from "../services/categoryService";
 import "../styles/dashboard.css";
 
 export default function TeacherCourseForm() {
@@ -16,22 +17,49 @@ export default function TeacherCourseForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [categories, setCategories] = useState<any[]>([]);
   // Khởi tạo state cho dữ liệu khóa học
   const [formData, setFormData] = useState({
-    name: "",
     title: "",
     price: 0,
+    duration: 0,
     image: "",
     description: "",
     detail_description: "",
+    category_id: "",
+    teacher_id: "",
   });
 
-  // Nếu là chế độ Edit, gọi API để lấy dữ liệu cũ điền vào form
+  useEffect(() => {
+      const loadCategory = async () => {
+        try {
+          const res = await getCategories();
+          if (res.success || res.data) setCategories(res.data || res);
+        } catch (err) {
+          console.error("Lỗi khi tải danh mục:", err);
+        }
+      };
+      loadCategory();
+    }, []);
+
   useEffect(() => {
     if (isEditMode) {
       loadCourseData();
     }
   }, [id]);
+
+  // Lấy danh sách danh mục khi load trang
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const res = await getCategories();
+        if (res.success || res.data) setCategories(res.data || res);
+      } catch (err) {
+        console.error("Lỗi khi tải danh mục:", err);
+      }
+    };
+    fetchCats();
+  }, []);
 
   const loadCourseData = async () => {
     try {
@@ -39,12 +67,14 @@ export default function TeacherCourseForm() {
       const course = data.course || data || {}; // Tùy cấu trúc backend trả về
       if (course) {
         setFormData({
-          name: course.name || "",
           title: course.title || "",
           price: course.price || 0,
+          duration: course.duration || 0,
           image: course.image || "",
           description: course.description || "",
           detail_description: course.detail_description || "",
+          category_id: course.category_id || "",
+          teacher_id: course.teacher_id || "", 
         });
       }
     } catch (err: any) {
@@ -55,11 +85,11 @@ export default function TeacherCourseForm() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === "price" ? Number(value) : value
+      [name]: (name === "price" || name === "duration") ? Number(value) : value
     }));
   };
 
@@ -97,9 +127,6 @@ export default function TeacherCourseForm() {
             {isEditMode ? `Cập nhật thông tin cho khóa học ID: ${id}` : "Điền thông tin chi tiết để xuất bản khóa học của bạn."}
           </p>
         </div>
-        <Link to={returnPath} className="btn-secondary">
-          <span>⬅️</span> Quay lại
-        </Link>
       </div>
 
       <div className="card">
@@ -112,17 +139,31 @@ export default function TeacherCourseForm() {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Tên khóa học (Name)</label>
+              <label className="form-label">Danh mục (Category)</label>
+              <select 
+                name="category_id" value={formData.category_id} onChange={handleChange} 
+                className="form-input" required
+              >
+                <option value="">-- Chọn danh mục --</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Tên khóa học (Title)</label>
               <input 
-                type="text" name="name" value={formData.name} onChange={handleChange} 
+                type="text" name="title" value={formData.title} onChange={handleChange} 
                 className="form-input" placeholder="VD: ReactJS Cơ bản" required 
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Tiêu đề phụ (Title)</label>
+              <label className="form-label">Thời lượng (Phút)</label>
               <input 
-                type="text" name="title" value={formData.title} onChange={handleChange} 
-                className="form-input" placeholder="VD: Xây dựng nền tảng vững chắc" 
+                type="number" name="duration" value={formData.duration} onChange={handleChange} 
+                className="form-input" min="0" placeholder="VD: 120"
               />
             </div>
           </div>
@@ -139,7 +180,7 @@ export default function TeacherCourseForm() {
             <div className="form-group">
               <label className="form-label">URL Ảnh Thumbnail</label>
               <input 
-                type="url" name="image" value={formData.image} onChange={handleChange} 
+                type="text" name="image" value={formData.image} onChange={handleChange} 
                 className="form-input" placeholder="https://..." 
               />
             </div>

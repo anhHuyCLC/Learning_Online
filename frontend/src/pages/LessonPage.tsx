@@ -153,7 +153,7 @@ const LessonPage: React.FC = () => {
           {/* Video Player */}
           <div className="video-player-wrapper">
             {lesson.video_url ? (
-              <div>
+              <div className='video'>
                 <iframe
                   className="video-iframe"
                   src={lesson.video_url}

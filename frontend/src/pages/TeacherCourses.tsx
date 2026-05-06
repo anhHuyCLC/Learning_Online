@@ -8,7 +8,7 @@ export default function TeacherCourses() {
   const [courses, setCourses] = useState<Courses[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
+  const API_URL = "http://localhost:3000";
 
   useEffect(() => {
     loadCourses();
@@ -17,8 +17,7 @@ export default function TeacherCourses() {
   const loadCourses = async () => {
     try {
       setLoading(true);
-      // Lưu ý: Nếu backend của bạn trả về { data: [...] } thì cần .data
-      // Dựa theo courseService.ts, nó trả thẳng response.data
+
       const data = await fetchCoursesByTeacher();
       // Lọc khóa học hoặc gán trực tiếp tùy cấu trúc API trả về
       setCourses(Array.isArray(data) ? data : data.courses || []);
@@ -30,8 +29,8 @@ export default function TeacherCourses() {
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${name}" không? Thao tác này không thể hoàn tác.`)) {
+  const handleDelete = async (id: number, title: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa khóa học "${title}" không? Thao tác này không thể hoàn tác.`)) {
       try {
         await deleteCourse(id);
         // Cập nhật lại UI sau khi xóa thành công
@@ -92,13 +91,14 @@ export default function TeacherCourses() {
                     <td>
                       <div className="user-info">
                         {/* Hiển thị ảnh thu nhỏ của khóa học */}
-                        <img 
-                          src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : "https://via.placeholder.com/150"} 
-                          alt={course.name} 
-                          className="course-thumbnail-md"
+                        <img
+                          src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${(course.title || 'C').charAt(0)}`}
+                          alt={course.title}
+                          className="avatar"
+                          style={{ borderRadius: '8px', objectFit: 'cover' }}
                         />
                         <div>
-                          <div className="user-name">{course.title || course.name}</div>
+                          <div className="user-name">{course.title}</div>
                           <div className="text-muted" style={{ fontSize: '12px' }}>ID: {course.id}</div>
                         </div>
                       </div>
@@ -112,8 +112,8 @@ export default function TeacherCourses() {
                         <Link to={`/teacher/courses/edit/${course.id}`} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '13px' }}>
                           ✏️ Sửa
                         </Link>
-                        <button 
-                          onClick={() => handleDelete(course.id, course.title || course.name)}
+                        <button
+                          onClick={() => handleDelete(course.id, course.title)}
                           style={{ padding: '6px 12px', fontSize: '13px', color: 'var(--f8-danger)' }}
                         >
                           🗑️ Xóa

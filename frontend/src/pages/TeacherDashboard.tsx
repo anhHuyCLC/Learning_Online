@@ -8,7 +8,7 @@ const TeacherDashboard = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { stats, courses, loading, error } = useAppSelector((state) => state.teacher);
-    const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
+    const API_URL = "http://localhost:3000";
 
     useEffect(() => {
         dispatch(fetchTeacherDashboardData());
@@ -96,11 +96,11 @@ const TeacherDashboard = () => {
                                         <td>
                                             <div className="user-info">
                                                 <img 
-                                                    src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${course.name.charAt(0)}`} 
-                                                    alt={course.name} 
+                                                    src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${course.title.charAt(0)}`} 
+                                                    alt={course.title} 
                                                     className="course-thumbnail-sm" 
                                                 />
-                                                <span className="user-name">{course.name}</span>
+                                                <span className="user-name">{course.title}</span>
                                             </div>
                                         </td>
                                         <td>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(course.price || 0)}</td>

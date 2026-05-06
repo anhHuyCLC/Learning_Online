@@ -8,7 +8,7 @@ const AdminCourses = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { courses, loading, error } = useAppSelector((state) => state.courses);
-    const API_URL = (import.meta as any).env.VITE_API_URL || "https://gout-atop-protract.ngrok-free.dev";
+    const API_URL = "http://localhost:3000";
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
@@ -22,7 +22,7 @@ const AdminCourses = () => {
     };
 
     const filteredCourses = courses.filter(course => {
-        const courseName = course.name || (course as any).title || '';
+        const courseName = course.title || '';
         return courseName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                (course.teacher_name && course.teacher_name.toLowerCase().includes(searchTerm.toLowerCase()));
     });
@@ -73,12 +73,12 @@ const AdminCourses = () => {
                                         <td>
                                             <div className="user-info">
                                                 <img 
-                                                    src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${(course.name || (course as any).title || 'C').charAt(0)}`} 
-                                                    alt={course.name || (course as any).title} 
+                                                    src={course.image ? (course.image.startsWith('http') ? course.image : `${API_URL}${course.image}`) : `https://via.placeholder.com/40x40?text=${(course.title || 'C').charAt(0)}`} 
+                                                    alt={course.title} 
                                                     className="avatar" 
                                                     style={{ borderRadius: '8px', objectFit: 'cover' }} 
                                                 />
-                                                <span className="user-name">{course.name || (course as any).title}</span>
+                                                <span className="user-name">{course.title}</span>
                                             </div>
                                         </td>
                                         <td>{course.teacher_name || 'N/A'}</td>
@@ -94,7 +94,7 @@ const AdminCourses = () => {
                                             <button 
                                                 className="btn-danger btn-sm" 
                                                 style={{ marginLeft: '8px' }}
-                                                onClick={() => handleDelete(course.id, course.name || (course as any).title || '')}
+                                                onClick={() => handleDelete(course.id, course.title || '')}
                                             >
                                                 Xóa
                                             </button>

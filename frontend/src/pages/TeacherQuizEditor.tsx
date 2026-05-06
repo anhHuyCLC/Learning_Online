@@ -28,6 +28,7 @@ export default function TeacherQuizEditor() {
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   
   const [quiz, setQuiz] = useState<Quiz>({
     title: "",
@@ -42,6 +43,11 @@ export default function TeacherQuizEditor() {
         // Nếu backend trả về dữ liệu quiz
         if (data && (data.id || data.quiz)) {
           const fetchedQuiz = data.quiz || data;
+          
+          if (fetchedQuiz.id) {
+            setIsEditMode(true);
+          }
+          
           setQuiz({
             ...fetchedQuiz,
             questions: fetchedQuiz.questions || [] // Đảm bảo luôn là mảng
@@ -146,12 +152,21 @@ export default function TeacherQuizEditor() {
   };
 
   const handleSaveQuiz = async () => {
+    if (!quiz.title.trim()) {
+      setError("Vui lòng nhập tiêu đề cho bài Quiz.");
+      return;
+    }
+    if (!quiz.questions || quiz.questions.length === 0) {
+      setError("Vui lòng thêm ít nhất 1 câu hỏi.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
       await saveTeacherQuiz(quiz);
 
-      alert("Lưu Quiz thành công!");
+      alert(isEditMode ? "Cập nhật Quiz thành công!" : "Tạo Quiz mới thành công!");
       navigate("/teacher/quizzes");
     } catch (err: any) {
       setError(err.message);
@@ -168,8 +183,8 @@ export default function TeacherQuizEditor() {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div className="header-info">
-          <h2 className="heading-1">✍️ Trình soạn thảo Quiz</h2>
-          <p className="text-muted">Bài học ID: {lessonId}</p>
+          <h2 className="heading-1">{isEditMode ? "✏️ Chỉnh sửa Quiz" : "✨ Tạo Quiz mới"}</h2>
+          <p className="text-muted">{isEditMode ? `Cập nhật bài kiểm tra cho bài học ID: ${lessonId}` : `Thêm bài kiểm tra mới cho bài học ID: ${lessonId}`}</p>
         </div>
         <Link to="/teacher/quizzes" className="btn-secondary">
           <span>⬅️</span> Quay lại
@@ -253,7 +268,7 @@ export default function TeacherQuizEditor() {
           ➕ Thêm câu hỏi
         </button>
         <button onClick={handleSaveQuiz} className="btn-primary" disabled={saving}>
-          {saving ? "Đang lưu..." : "💾 Lưu toàn bộ Quiz"}
+          {saving ? "Đang xử lý..." : (isEditMode ? "💾 Cập nhật Quiz" : "🚀 Tạo Quiz mới")}
         </button>
       </div>
     </div>

@@ -4,28 +4,25 @@ import { createCourse, updateCourse, fetchCourseById } from "../services/courseS
 import "../styles/dashboard.css";
 
 export default function AdminCourseForm() {
-  const { id } = useParams(); // Lấy ID từ URL nếu đang ở chế độ Edit
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
 
-  // Đường dẫn luôn quay về trang quản lý của Admin
   const returnPath = "/admin/courses";
 
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Khởi tạo state cho dữ liệu khóa học
   const [formData, setFormData] = useState({
-    name: "",
     title: "",
     price: 0,
+    duration: 0,
     image: "",
     description: "",
     detail_description: "",
   });
 
-  // Nếu là chế độ Edit, gọi API để lấy dữ liệu cũ điền vào form
   useEffect(() => {
     if (isEditMode) {
       loadCourseData();
@@ -35,11 +32,11 @@ export default function AdminCourseForm() {
   const loadCourseData = async () => {
     try {
       const data = await fetchCourseById(Number(id));
-      const course = data.course || data; // Tùy cấu trúc backend trả về
+      const course = data.course || data; 
       setFormData({
-        name: course.name || "",
         title: course.title || "",
         price: course.price || 0,
+        duration: course.duration || 0,
         image: course.image || "",
         description: course.description || "",
         detail_description: course.detail_description || "",
@@ -56,7 +53,7 @@ export default function AdminCourseForm() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === "price" ? Number(value) : value
+      [name]: (name === "price" || name === "duration") ? Number(value) : value
     }));
   };
 
@@ -65,13 +62,8 @@ export default function AdminCourseForm() {
     setSaving(true);
     setError(null);
 
-    const dataToSend = new FormData();
-    dataToSend.append("name", formData.name);
-    dataToSend.append("title", formData.title);
-    dataToSend.append("price", String(formData.price));
-    dataToSend.append("image", formData.image);
-    dataToSend.append("description", formData.description);
-    dataToSend.append("detail_description", formData.detail_description);
+    // Gửi dạng JSON chuẩn để backend dễ dàng map với req.body
+    const dataToSend = { ...formData };
 
     try {
       if (isEditMode) {
@@ -99,9 +91,9 @@ export default function AdminCourseForm() {
             {isEditMode ? `Cập nhật thông tin cho khóa học ID: ${id} với quyền Quản trị viên` : "Thêm khóa học mới vào hệ thống."}
           </p>
         </div>
-        <Link to={returnPath} className="btn-secondary">
+        {/* <Link to={returnPath} className="btn-secondary">
           <span>⬅️</span> Quay lại
-        </Link>
+        </Link> */}
       </div>
 
       <div className="card">
@@ -114,12 +106,12 @@ export default function AdminCourseForm() {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Tên khóa học (Name)</label>
-              <input type="text" name="name" value={formData.name} onChange={handleChange} className="form-input" placeholder="VD: ReactJS Cơ bản" required />
+          <label className="form-label">Tên khóa học (Title)</label>
+          <input type="text" name="title" value={formData.title} onChange={handleChange} className="form-input" placeholder="VD: ReactJS Cơ bản" required />
             </div>
             <div className="form-group">
-              <label className="form-label">Tiêu đề phụ (Title)</label>
-              <input type="text" name="title" value={formData.title} onChange={handleChange} className="form-input" placeholder="VD: Xây dựng nền tảng vững chắc" />
+              <label className="form-label">Thời lượng (Phút)</label>
+              <input type="number" name="duration" value={formData.duration} onChange={handleChange} className="form-input" min="0" placeholder="VD: 120" />
             </div>
           </div>
 
@@ -131,7 +123,7 @@ export default function AdminCourseForm() {
             </div>
             <div className="form-group">
               <label className="form-label">URL Ảnh Thumbnail</label>
-              <input type="url" name="image" value={formData.image} onChange={handleChange} className="form-input" placeholder="https://..." />
+              <input type="text" name="image" value={formData.image} onChange={handleChange} className="form-input" placeholder="https://..." />
             </div>
           </div>
 

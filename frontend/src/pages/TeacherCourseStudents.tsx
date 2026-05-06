@@ -20,7 +20,7 @@ const TeacherCourseStudents = () => {
         <div className="dashboard-container">
             <div className="dashboard-header">
                 <div className="header-info">
-                    <h1 className="heading-1">Học viên: {course?.name || 'Đang tải...'}</h1>
+                    <h1 className="heading-1">Học viên: {course?.title || 'Đang tải...'}</h1>
                     <p className="text-muted">Danh sách tất cả học viên đã đăng ký khóa học này.</p>
                 </div>
                 <Link to="/teacher" className="btn-secondary">

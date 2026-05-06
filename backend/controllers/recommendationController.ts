@@ -97,7 +97,7 @@ export const generateRecommendations = async (req: AuthenticatedRequest, res: Re
 
           return {
             courseId: rec.courseId,
-            courseTitle: detail.title || detail.name || rec.courseName,
+            courseTitle: detail.title || rec.courseName,
             courseDescription: detail.description || '',
             difficulty: mappedDifficulty,
             duration: detail.duration_hours || detail.duration || 0,
@@ -146,7 +146,7 @@ export const getRecommendations = async (req: Request, res: Response) => {
     
     try {
       const [rows]: any = await connection.execute(
-        `SELECT rh.*, c.title, c.name, c.description, c.difficulty, c.price, c.rating
+        `SELECT rh.*, c.title, c.description, c.price, c.duration
          FROM recommendation_history rh
          JOIN courses c ON rh.course_id = c.id
          WHERE rh.user_id = ?
@@ -172,7 +172,7 @@ export const getRecommendations = async (req: Request, res: Response) => {
         userId,
         recommendations: recommendations.map((rec: any) => ({
           courseId: rec.course_id,
-          courseTitle: rec.title || rec.name,
+          courseTitle: rec.title,
           courseDescription: rec.description,
           difficulty: rec.difficulty || 'beginner',
           duration: rec.duration_hours || rec.duration || 0,
@@ -229,6 +229,8 @@ export const logRecommendationFeedback = async (req: AuthenticatedRequest, res: 
       UPDATE recommendation_history
       SET ${updateField} = ?${additionalFields}
       WHERE user_id = ? AND course_id = ?
+      ORDER BY recommended_at DESC
+      LIMIT 1
     `;
 
     const params = additionalFields.includes('feedback')

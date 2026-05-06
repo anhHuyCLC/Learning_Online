@@ -9,7 +9,6 @@ export type Lesson = {
 
 export type Courses = {
   id: number;
-  name: string;
   price: number;
   title: string;
   image: string;
@@ -17,6 +16,12 @@ export type Courses = {
   teacher_name: string;
   description: string;
   detail_description?: string;
+  category_id: number;
+  teacher_id: number;
+  student_count?: number;
+  avg_rating?: string;
+  review_count?: number;
+  reviews?: any[];
   lessons?: Lesson[];
 };
 

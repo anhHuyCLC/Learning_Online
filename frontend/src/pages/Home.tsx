@@ -228,7 +228,9 @@ export default function Home() {
         <div className="courses-grid">
           {courses.map((course: Courses) => {
             const imageUrl = course.image
-              ? `${API_URL}${course.image}`
+              ? course.image.startsWith("http")
+                ? course.image
+                : `${API_URL}${course.image}`
               : DEFAULT_IMAGE;
 
             return (
@@ -236,13 +238,12 @@ export default function Home() {
                 <div className="course-image">
                   <img
                     src={imageUrl}
-                    alt={course.name}
+                    alt={course.title}
                     loading="lazy"
                     onError={(e) => {
                       const img = e.currentTarget;
 
-                      // tránh loop vô hạn
-                      if (img.src !== window.location.origin + DEFAULT_IMAGE) {
+                      if (img.src !== DEFAULT_IMAGE) {
                         img.src = DEFAULT_IMAGE;
                       }
                     }}
@@ -250,7 +251,7 @@ export default function Home() {
                 </div>
 
                 <div className="course-meta">
-                  <h3>{course.name}</h3>
+                  <h3>{course.title}</h3>
                   <p>{course.description}</p>
 
                   <div className="course-footer">

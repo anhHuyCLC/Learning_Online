@@ -82,3 +82,12 @@ export const fetchCourseStudents = async (courseId: number) => {
     throw new Error(error.response?.data?.message || "Không thể tải danh sách học viên");
   }
 };
+
+export const submitCourseReview = async (courseId: number, rating: number, comment: string) => {
+  try {
+    const res = await apiClient.post(`/courses/${courseId}/reviews`, { rating, comment });
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Lỗi khi gửi đánh giá");
+  }
+};

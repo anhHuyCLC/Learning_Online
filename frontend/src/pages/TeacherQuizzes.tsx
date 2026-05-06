@@ -100,9 +100,15 @@ export default function TeacherQuizzes() {
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <Link to={`/teacher/quizzes/lesson/${lesson.id}`} className="btn-secondary btn-sm">
-                        {lesson.has_quiz ? 'Chỉnh sửa Quiz' : 'Tạo Quiz'}
-                      </Link>
+                      {lesson.has_quiz ? (
+                        <Link to={`/teacher/quizzes/lesson/${lesson.id}`} className="btn-secondary btn-sm">
+                          ✏️ Chỉnh sửa Quiz
+                        </Link>
+                      ) : (
+                        <Link to={`/teacher/quizzes/lesson/${lesson.id}`} className="btn-primary btn-sm">
+                          ✨ Tạo Quiz mới
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))

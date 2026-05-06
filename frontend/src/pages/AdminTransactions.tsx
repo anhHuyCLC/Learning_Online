@@ -4,10 +4,13 @@ import '../styles/dashboard.css';
 
 const AdminTransactions = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [stats, setStats] = useState({ totalDeposited: 0, totalPending: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [stats, setStats] = useState({
+    totalDeposited: 0,
+    totalPending: 0
+  });
 
   useEffect(() => {
     fetchData();
@@ -20,11 +23,11 @@ const AdminTransactions = () => {
         getTransactions(),
         getTransactionStats()
       ]);
-      
+
       if (txData?.success) {
-        setTransactions(txData.data || []); 
+        setTransactions(txData.data || []);
       }
-      
+
       if (statsData?.success) {
         const backendStats = statsData.stats || statsData.data?.stats || {};
         setStats({
@@ -32,7 +35,7 @@ const AdminTransactions = () => {
           totalPending: Number(backendStats.totalPending) || 0
         });
       }
-      
+
     } catch (err) {
       setError("Lỗi kết nối tới máy chủ");
     } finally {
@@ -40,17 +43,8 @@ const AdminTransactions = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'completed': return <span className="status-badge badge-emerald">Hoàn thành</span>;
-      case 'pending': return <span className="status-badge badge-amber">Đang xử lý</span>;
-      case 'failed': return <span className="status-badge badge-rose">Thất bại</span>;
-      case 'refunded': return <span className="status-badge badge-slate" style={{ backgroundColor: '#e2e8f0', color: '#475569' }}>Hoàn tiền</span>;
-      default: return <span className="status-badge">Unknown</span>;
-    }
-  };
 
-  const filteredTransactions = transactions.filter(trx => 
+  const filteredTransactions = transactions.filter(trx =>
     filterStatus === 'all' ? true : trx.status === filterStatus
   );
 
@@ -66,13 +60,13 @@ const AdminTransactions = () => {
       <div className="stats-grid mb-6">
         <div className="stat-card">
           <p className="stat-title">Tổng Tiền Đã Nạp (Completed)</p>
-          <h3 className="stat-value" style={{color: 'var(--f8-success)'}}>
+          <h3 className="stat-value" style={{ color: 'var(--f8-success)' }}>
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats?.totalDeposited || 0)}
           </h3>
         </div>
         <div className="stat-card">
           <p className="stat-title">Tiền Đang Chờ (Pending)</p>
-          <h3 className="stat-value" style={{color: 'var(--f8-warning)'}}>
+          <h3 className="stat-value" style={{ color: 'var(--f8-warning)' }}>
             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats?.totalPending || 0)}
           </h3>
         </div>
@@ -81,8 +75,8 @@ const AdminTransactions = () => {
       <div className="card">
         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 className="heading-2">Danh sách giao dịch ({filteredTransactions.length})</h2>
-          <select 
-            className="form-input" 
+          <select
+            className="form-input"
             style={{ width: 'auto', padding: '6px 12px' }}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -117,32 +111,32 @@ const AdminTransactions = () => {
                 {filteredTransactions.length > 0 ? filteredTransactions.map((trx, index) => (
                   <tr key={trx.id || index}>
                     <td className='text-mono font-bold'>#{trx.id}</td>
-                    
+
                     {/* Cột payment_method hiện đang lưu mã Order */}
                     <td className='text-mono' style={{ color: '#64748b' }}>
                       {trx.payment_method || 'N/A'}
                     </td>
-                    
+
                     {/* Lấy tên user từ câu query JOIN */}
                     <td className="font-medium">{trx.user_name || `User ID: ${trx.user_id}`}</td>
-                    
+
                     <td>
-                      <span style={{ 
-                        padding: '4px 8px', borderRadius: '4px', 
+                      <span style={{
+                        padding: '4px 8px', borderRadius: '4px',
                         backgroundColor: '#e0f2fe', color: '#0369a1',
                         fontSize: '12px', fontWeight: 500
                       }}>
                         Nạp ví
                       </span>
                     </td>
-                    
+
                     <td className="font-bold">
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(trx.amount) || 0)}
                     </td>
-                    
+
                     <td>{trx.created_at ? new Date(trx.created_at).toLocaleString('vi-VN') : 'N/A'}</td>
-                    
-                    <td>{getStatusBadge(trx.status)}</td>
+
+                    <td>{trx.status}</td>
                   </tr>
                 )) : (
                   <tr>

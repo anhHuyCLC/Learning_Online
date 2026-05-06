@@ -12,6 +12,7 @@ import teacherRoutes from "./routes/teacherRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
 import recommendationRoutes from "./routes/recommendationRoutes";
+import categoryRoutes from "./routes/categoryRoutes";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/users", userRoutes);
 app.use("/api", courseRoutes);
+app.use("/api/categories", categoryRoutes)
 app.use("/api", enrollmentRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use('/api/progress', lessonProgressRoutes);

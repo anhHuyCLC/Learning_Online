@@ -96,7 +96,14 @@ const StudentEnrollments: React.FC = () => {
                         {filteredEnrollments.map((enrollment) => (
                             <div key={enrollment.id} className="enrollment-card">
                                 <div className="enrollment-image">
-                                    <img src={`${API_URL}${enrollment.course_image}`} alt={enrollment.course_name} />
+                                    <img 
+                                        src={enrollment.course_image 
+                                            ? (enrollment.course_image.startsWith("http") 
+                                                ? enrollment.course_image 
+                                                : `${API_URL}${enrollment.course_image}`) 
+                                            : "https://via.placeholder.com/300x200?text=Course"} 
+                                        alt={enrollment.course_name} 
+                                    />
                                     <span className={`status-badge status-${enrollment.status}`}>
                                         {enrollment.status === "active" ? "🔄 Đang Học" : "✅ Hoàn Thành"}
                                     </span>
