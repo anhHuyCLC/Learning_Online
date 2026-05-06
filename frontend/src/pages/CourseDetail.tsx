@@ -99,7 +99,7 @@ export default function CourseDetail() {
             alert("Cảm ơn bạn đã đánh giá khóa học!");
             setRating(0);
             setComment("");
-            dispatch(getCourseById(courseId)); // Load lại course để cập nhật đánh giá mới
+            dispatch(getCourseById(courseId)); 
         } catch (err: any) {
             alert(err.message || "Có lỗi xảy ra khi gửi đánh giá");
         } finally {
@@ -260,7 +260,6 @@ export default function CourseDetail() {
                         )}
                     </div>
 
-                    {/* Form Viết Đánh Giá (Chỉ hiện khi đã đăng ký) */}
                     {isUserEnrolled && (
                         <div className="review-form-container" style={{ marginTop: '30px' }}>
                             <h4 style={{ fontSize: '18px', marginBottom: '12px', fontWeight: 'bold', color: '#1e293b' }}>

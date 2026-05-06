@@ -13,6 +13,7 @@ import adminRoutes from "./routes/adminRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
 import recommendationRoutes from "./routes/recommendationRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
+import commentRoutes from "./routes/commentRoutes";
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use("/api/quizzes", quizRoutes);
 app.use('/api/progress', lessonProgressRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use("/api/recommendations", recommendationRoutes);
+app.use("/api", commentRoutes);
 
 // Protected dashboard routes
 app.use("/api/teacher", teacherRoutes);

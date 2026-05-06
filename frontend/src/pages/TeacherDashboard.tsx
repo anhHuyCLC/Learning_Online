@@ -1,18 +1,45 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { fetchTeacherDashboardData } from '../features/teacherSlice';
 import '../styles/dashboard.css';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../services/apiClient';
 
 const TeacherDashboard = () => {
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { stats, courses, loading, error } = useAppSelector((state) => state.teacher);
     const API_URL = "http://localhost:3000";
+    const [pendingQuestions, setPendingQuestions] = useState<any[]>([]);
+    const [replyContent, setReplyContent] = useState<{ [key: number]: string }>({});
 
     useEffect(() => {
         dispatch(fetchTeacherDashboardData());
+        loadPendingQuestions();
     }, [dispatch]);
+
+    const loadPendingQuestions = async () => {
+        try {
+            const res = await apiClient.get('/teacher/pending-questions');
+            setPendingQuestions(res.data.questions || res.data || []);
+        } catch (err) {
+            console.error("Lỗi khi tải câu hỏi:", err);
+        }
+    };
+
+    const handleReplyQuestion = async (questionId: number, lessonId: number) => {
+        const content = replyContent[questionId];
+        if (!content?.trim()) return;
+        
+        try {
+            await apiClient.post(`/lessons/${lessonId}/comments`, { content, parent_id: questionId });
+            setReplyContent(prev => ({ ...prev, [questionId]: '' }));
+            alert("Đã gửi câu trả lời!");
+            loadPendingQuestions();
+        } catch (err) {
+            alert("Lỗi khi gửi câu trả lời.");
+        }
+    };
 
     const calculatedRevenue = courses.reduce((total, course) => {
         const price = Number(course.price) || 0;
@@ -60,8 +87,66 @@ const TeacherDashboard = () => {
                 ))}
             </div>
 
+            {/* Pending Questions Table */}
+            <div className="card mt-6">
+                <div className="card-header">
+                    <h2 className="heading-2">Câu Hỏi Chờ Trả Lời</h2>
+                </div>
+                
+                <div className="table-container">
+                    <table className="data-table">
+                        <thead>
+                            <tr>
+                                <th>Học viên</th>
+                                <th>Khóa học - Bài học</th>
+                                <th>Nội dung câu hỏi</th>
+                                <th>Thời gian</th>
+                                <th className="text-center" style={{ width: '250px' }}>Trả lời</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pendingQuestions.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="text-center p-4 text-muted">
+                                        🎉 Hiện tại không có câu hỏi nào đang chờ xử lý.
+                                    </td>
+                                </tr>
+                            ) : (
+                                pendingQuestions.map((q) => (
+                                    <tr key={q.id}>
+                                        <td className="font-bold">{q.user_name}</td>
+                                        <td>
+                                            <div style={{ fontSize: '13px', color: 'var(--f8-primary)' }}>{q.course_title}</div>
+                                            <div style={{ fontSize: '12px' }}>{q.lesson_title}</div>
+                                        </td>
+                                        <td>{q.content}</td>
+                                        <td>{new Date(q.created_at).toLocaleDateString('vi-VN')}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input 
+                                                    type="text" 
+                                                    className="form-input" 
+                                                    placeholder="Nhập câu trả lời..." 
+                                                    style={{ padding: '6px 10px', fontSize: '13px' }}
+                                                    value={replyContent[q.id] || ''}
+                                                    onChange={(e) => setReplyContent({...replyContent, [q.id]: e.target.value})}
+                                                    onKeyPress={(e) => e.key === 'Enter' && handleReplyQuestion(q.id, q.lesson_id)}
+                                                />
+                                                <button className="btn-primary btn-sm" onClick={() => handleReplyQuestion(q.id, q.lesson_id)}>
+                                                    Gửi
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             {/* My Courses Table */}
-            <div className="card">
+            <div className="card mt-6">
                 <div className="card-header">
                     <h2 className="heading-2">Các Khóa Học Của Tôi</h2>
                     <button className="btn-primary btn-sm" onClick={() => navigate('/teacher/courses/new')}>Tạo khóa học mới</button>

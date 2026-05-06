@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../app/store';
 import { getCourseById } from '../features/courseSlice';
 import { getProgressForCourse, markLessonAsCompleted } from '../features/progressSlice';
@@ -12,6 +12,7 @@ import '../styles/courseLearning.css';
 const CourseLearningPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const courseId = parseInt(id || '0', 10);
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { courses, loading, error } = useAppSelector((state) => state.courses);
   const { completedLessons } = useAppSelector((state) => state.progress);
@@ -27,6 +28,10 @@ const CourseLearningPage: React.FC = () => {
 
   const handleMarkAsCompleted = (lessonId: number) => {
     dispatch(markLessonAsCompleted({ lessonId, courseId }));
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   const getStatusIcon = (isCompleted: boolean, isLocked: boolean) => {
@@ -51,7 +56,7 @@ const CourseLearningPage: React.FC = () => {
   };
 
   const getDifficultyColor = (level: string): string => {
-    switch(level) {
+    switch (level) {
       case 'Cơ bản': return '#10b981';
       case 'Trung bình': return '#f59e0b';
       case 'Nâng cao': return '#ef4444';
@@ -80,7 +85,9 @@ const CourseLearningPage: React.FC = () => {
 
   return (
     <div>
-      <Header title="Khóa học" />
+      <Header title="Khóa học"
+        onBackClick={handleBack}
+      />
       <div className="course-learning-wrapper">
         <div className="course-learning-container">
           <div className="course-learning-main">
@@ -117,15 +124,15 @@ const CourseLearningPage: React.FC = () => {
                       const difficulty = getDifficultyLevel(index);
 
                       return (
-                        <li 
-                          key={lesson.id} 
+                        <li
+                          key={lesson.id}
                           className={`lesson-item ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''} ${isExpanded ? 'expanded' : ''}`}
                           onClick={() => !isLocked && setExpandedLesson(isExpanded ? null : lesson.id)}
                         >
                           <div className="lesson-item-icon">
                             <span className="icon-inner">{getStatusIcon(isCompleted, isLocked)}</span>
                           </div>
-                          
+
                           <div className="lesson-item-content">
                             <Link
                               to={!isLocked ? `/courses/${courseId}/lessons/${lesson.id}` : '#'}
@@ -137,9 +144,9 @@ const CourseLearningPage: React.FC = () => {
                                   Bài {lesson.lesson_order}: {lesson.title}
                                 </h3>
                                 <div className="lesson-badges">
-                                  <span 
+                                  <span
                                     className="difficulty-badge"
-                                    style={{borderColor: getDifficultyColor(difficulty)}}
+                                    style={{ borderColor: getDifficultyColor(difficulty) }}
                                   >
                                     {difficulty}
                                   </span>
@@ -152,7 +159,7 @@ const CourseLearningPage: React.FC = () => {
                                 ⏱️ {estimateDuration(index)}
                               </p>
                             </Link>
-                            
+
                             {isExpanded && !isLocked && (
                               <div className="lesson-expanded-info">
                                 <p className="lesson-status">
@@ -168,7 +175,7 @@ const CourseLearningPage: React.FC = () => {
 
                           <div className="lesson-actions">
                             {!isLocked && !isCompleted && (
-                              <button 
+                              <button
                                 className="complete-btn"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -181,8 +188,8 @@ const CourseLearningPage: React.FC = () => {
                               </button>
                             )}
                             {lesson.has_quiz && !isLocked && (
-                              <Link 
-                                to={`/courses/${courseId}/lessons/${lesson.id}/quiz`} 
+                              <Link
+                                to={`/courses/${courseId}/lessons/${lesson.id}/quiz`}
                                 className="quiz-link"
                                 onClick={(e) => e.stopPropagation()}
                               >
@@ -207,7 +214,7 @@ const CourseLearningPage: React.FC = () => {
           <aside className="lessons-sidebar">
             <div className="progress-card">
               <h3>📊 Tiến độ học tập</h3>
-              
+
               <div className="progress-stat-group">
                 <div className="progress-stat">
                   <span className="stat-value">{completedLessons.length}</span>
@@ -225,7 +232,7 @@ const CourseLearningPage: React.FC = () => {
                   <span className="progress-percentage">{getProgressPercentage()}%</span>
                 </div>
                 <div className="progress-bar-track">
-                  <div 
+                  <div
                     className="progress-bar-fill"
                     style={{
                       width: `${getProgressPercentage()}%`,

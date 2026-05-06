@@ -1,11 +1,5 @@
-/**
- * RecommendationCard Component
- * File: frontend/src/components/RecommendationCard.tsx
- * 
- * Display a single recommended course with detailed scoring information.
- */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAppDispatch } from '../app/store';
 import { logFeedback } from '../features/recommendationSlice';
 import type { RecommendedCourse } from '../services/recommendationService';
@@ -23,7 +17,6 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
   const [hoverScoreType, setHoverScoreType] = useState<string | null>(null);
 
   const handleCourseClick = async () => {
-    // Log click feedback
     await dispatch(logFeedback({
       courseId: course.courseId,
       action: 'clicked'
@@ -39,7 +32,6 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
       courseId: course.courseId,
       action: 'enrolled'
     }));
-    // Navigate to course learning page
     window.location.href = `/course/${course.courseId}`;
   };
 
@@ -51,14 +43,11 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
     setFeedbackSent(true);
   };
 
-  // "BỘ QUÉT THÔNG MINH": Lấy dữ liệu từ mọi tên biến có thể trả về từ API
   let safeBreakdown: any = {};
-  // SỬA: Đưa biến mlScoreFactors được khai báo ở Backend (hybridFeedback.service.ts) vào bộ quét
   const rawScores = course.scoreBreakdown || (course as any).mlScoreFactors || (course as any).ml_score_factors || (course as any).component_scores || (course as any).componentScores || {};
 
   try {
     let parsedScores = typeof rawScores === 'string' ? JSON.parse(rawScores) : rawScores;
-    // Đôi khi API có thể stringify 2 lần, ta parse thêm một lần nữa nếu nó vẫn là chuỗi
     if (typeof parsedScores === 'string') {
       parsedScores = JSON.parse(parsedScores);
     }
@@ -75,10 +64,6 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
   } catch (error) {
     console.error("Failed to parse score breakdown:", error);
   }
-  // MẸO DEBUG: Bỏ comment dòng dưới để F12 xem chính xác Backend đang trả về dữ liệu gì
-  // console.log(`[Course ${course.courseId}] SafeBreakdown:`, safeBreakdown, "Raw Course:", course);
-
-  // Hàm quy đổi tự động: Nếu API trả về hệ số 0.x thì nhân 100, nếu > 1 thì giữ nguyên
   const parseScore = (val: any) => {
     if (val === undefined || val === null) return 0;
     const num = Number(val);
@@ -87,9 +72,7 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
     return Math.round(num);
   };
 
-  // Hàm lấy giá trị hỗ trợ bất kể viết hoa hay viết thường
   const getValue = (keys: string[]) => {
-    // Tìm trong safeBreakdown trước, nếu không có thì tìm thẳng trong Object course gốc
     const sources = [safeBreakdown, course as any];
     for (const source of sources) {
       if (!source) continue;
@@ -132,8 +115,6 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
   };
 
   const getScoreColor = (score: number) => {
-    // Note: score passed here is out of 10 for original logic, but backend uses 100
-    // Adjusting thresholds for 100-point scale
     const normalizedScore = score <= 10 ? score * 10 : score;
 
     if (normalizedScore >= 85) return '#4CAF50';
@@ -202,7 +183,7 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
           </div>
           <div className="meta-item" style={{ fontSize: '0.875rem' }}>
             <span className="meta-label" style={{ color: '#64748b', marginRight: '4px' }}>Thời Lượng:</span>
-            <span className="meta-value font-medium">{course.duration || 0} giờ</span>
+            <span className="meta-value font-medium">{course.duration || 0} Phút</span>
           </div>
           <div className="meta-item" style={{ fontSize: '0.875rem' }}>
             <span className="meta-label" style={{ color: '#64748b', marginRight: '4px' }}>Giá:</span>
@@ -210,7 +191,7 @@ export default function RecommendationCard({ course, rank, onCourseClick }: Reco
           </div>
           <div className="meta-item" style={{ fontSize: '0.875rem' }}>
             <span className="meta-label" style={{ color: '#64748b', marginRight: '4px' }}>Đánh Giá:</span>
-            <span className="meta-value font-medium text-yellow-500">⭐ {course.rating || 5}</span>
+            <span className="meta-value font-medium text-yellow-500">⭐ {course.rating || "Chưa có đánh giá nào"}</span>
           </div>
           <div className="meta-item" style={{ fontSize: '0.875rem' }}>
             <span className="meta-label" style={{ color: '#64748b', marginRight: '4px' }}>Học Viên:</span>
