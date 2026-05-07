@@ -1,6 +1,7 @@
 import { listCourses, listCoursesByTeacher } from "../models/courseModel";
 import connectDB from "../config/db";
-
+import fs from 'fs';
+import path from 'path';
 
 
 export const getCourses = async (req: any, res: any): Promise<void> => {
@@ -87,7 +88,14 @@ export const createCourse = async (req: any, res: any): Promise<void> => {
         const { title, description, price, duration, detail_description, image, category_id } = req.body;
         const teacherId = req.user.id;
         const userRole = req.user.role;
-        const imagePath = req.file ? `/${req.file.path.replace(/\\/g, "/")}` : (image || null);
+    
+        let imagePath = image || null; // Lấy URL từ form nếu có
+        // Nếu có file được upload, ưu tiên sử dụng đường dẫn của file đó
+        if (req.file) {
+            // Đường dẫn tương đối để lưu vào DB và truy cập từ frontend
+            imagePath = `/uploads/courses/${req.file.filename}`;
+        }
+
         
         if (!title || !description) {
             res.status(400).json({
@@ -168,13 +176,33 @@ export const updateCourse = async (req: any, res: any): Promise<void> => {
     // Xử lý ảnh
     let imagePath = course.image;
 
+    // 1. Nếu có file mới được upload, cập nhật đường dẫn và xóa ảnh cũ
     if (req.file) {
-      imagePath = `/${req.file.path.replace(/\\/g, "/")}`;
-    } else if (image) {
+      imagePath = `/uploads/courses/${req.file.filename}`;
+      // Xóa ảnh cũ nếu có và là ảnh do hệ thống upload
+      if (course.image && course.image.startsWith('/uploads')) {
+        // path.resolve sẽ tạo đường dẫn tuyệt đối từ thư mục chạy server (backend root)
+        const oldImageFilePath = path.resolve(course.image.substring(1));
+        if (fs.existsSync(oldImageFilePath)) {
+          fs.unlink(oldImageFilePath, (err) => {
+            if (err) console.error("Lỗi khi xóa ảnh cũ:", err);
+          });
+        }
+      }
+    } 
+    // 2. Nếu không có file mới, nhưng trường image là chuỗi rỗng/null, nghĩa là người dùng muốn xóa ảnh
+    else if (image === '' || image === null || image === 'null' || image === 'undefined') {
+      imagePath = null;
+      if (course.image && course.image.startsWith('/uploads')) {
+        const oldImageFilePath = path.resolve(course.image.substring(1));
+        if (fs.existsSync(oldImageFilePath)) {
+          fs.unlink(oldImageFilePath, (err) => {
+            if (err) console.error("Lỗi khi xóa ảnh cũ:", err);
+          });
+        }
+      }
+    } else if (image) { // 3. Nếu không có file mới, nhưng có URL ảnh (có thể là URL cũ hoặc URL mới từ input text)
       imagePath = image;
-    } else if (image !== undefined) {
-      // Nếu có truyền image lên nhưng là chuỗi rỗng thì đưa về null để xoá ảnh cũ
-      imagePath = image || null;
     }
 
     // Update DB

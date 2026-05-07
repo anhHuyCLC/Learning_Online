@@ -17,6 +17,9 @@ export default function TeacherCourseForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const [categories, setCategories] = useState<any[]>([]);
   // Khởi tạo state cho dữ liệu khóa học
   const [formData, setFormData] = useState({
@@ -93,13 +96,45 @@ export default function TeacherCourseForm() {
     }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setFormData(prev => ({ ...prev, image: "" }));
+    } else {
+      setImageFile(null);
+      setImagePreview(null);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image: "" }));
+    // Reset the file input so the user can select the same file again if they want
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
-    // Gửi dạng JSON chuẩn để backend (express.json) dễ dàng đọc dữ liệu text/url
-    const dataToSend = { ...formData }; 
+    const dataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === 'image' && imageFile) return;
+      if (value !== null && value !== undefined) {
+        dataToSend.append(key, String(value));
+      }
+    });
+    
+    if (imageFile) {
+      dataToSend.append("image", imageFile);
+    }
 
     try {
       if (isEditMode) {
@@ -178,11 +213,41 @@ export default function TeacherCourseForm() {
               <span className="text-muted" style={{ fontSize: '12px' }}>Nhập 0 nếu là khóa học miễn phí.</span>
             </div>
             <div className="form-group">
-              <label className="form-label">URL Ảnh Thumbnail</label>
-              <input 
-                type="text" name="image" value={formData.image} onChange={handleChange} 
-                className="form-input" placeholder="https://..." 
-              />
+              <label className="form-label">Ảnh Thumbnail (URL hoặc Tải lên)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <input 
+                  type="text" name="image" value={formData.image} onChange={handleChange} 
+                  className="form-input" placeholder="Nhập URL ảnh (https://...)" disabled={!!imageFile}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="text-muted" style={{ fontSize: '14px', whiteSpace: 'nowrap' }}>Hoặc tải ảnh lên:</span>
+                  <input 
+                    type="file" accept="image/*" onChange={handleImageChange} 
+                    className="form-input" style={{ padding: '8px' }}
+                  />
+                </div>
+                {(imagePreview || formData.image) && (
+                  <div style={{ marginTop: '8px' }}>
+                    <p className="text-muted" style={{ fontSize: '12px', marginBottom: '4px' }}>Xem trước ảnh:</p>
+                    <img 
+                      src={imagePreview || (formData.image.startsWith('http') ? formData.image : `http://localhost:3000${formData.image}`)} 
+                      alt="Preview" 
+                      style={{ width: '100%', maxWidth: '200px', height: 'auto', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--f8-border)' }} 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x120?text=No+Image';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      style={{ marginTop: '8px', fontSize: '12px', padding: '4px 8px', cursor: 'pointer', background: 'none', border: 'none', color: 'var(--f8-danger)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <span style={{fontSize: '14px'}}>🗑️</span>
+                      Xóa ảnh
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -10,6 +10,7 @@ import {
     createLesson, updateLesson, deleteLesson,
     createReview
 } from "../controllers/courseController.js";
+import upload from "../config/multerConfig.js"; // Import Multer config
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const courseRouter = express.Router();
@@ -24,10 +25,10 @@ courseRouter.get("/courses/:id", getCourseById);
 courseRouter.get("/lessons/:lessonId", authMiddleware, getLessonById);
 
 // Create course - protected
-courseRouter.post("/courses", authMiddleware, createCourse);
+courseRouter.post("/courses", authMiddleware, upload.single('image'), createCourse); // Thêm upload.single('image')
 
 // Update course - protected
-courseRouter.put("/courses/:id", authMiddleware, updateCourse);
+courseRouter.put("/courses/:id", authMiddleware, upload.single('image'), updateCourse); // Thêm upload.single('image')
 
 // Delete course - protected
 courseRouter.delete("/courses/:id", authMiddleware, deleteCourse);

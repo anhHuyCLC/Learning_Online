@@ -25,7 +25,7 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
-    if (origin.startsWith('http://localhost:5173') || origin.endsWith('.vercel.app')) {
+    if (origin.startsWith('http://localhost:5173') || origin.endsWith('amazonaws.com')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
