@@ -107,9 +107,11 @@ export const sepayWebhook = async (req: Request, res: Response) => {
         return res.status(401).send('Unauthorized');
     }
 
-    const connection = (await connectDB()) as unknown as PoolConnection;
+    const pool = await connectDB();
+    let connection: PoolConnection | null = null;
 
     try {
+        connection = await pool.getConnection();
         const { transferAmount, content } = req.body;
         const match = content?.match(/LMS\d+/);
         
@@ -166,13 +168,17 @@ export const sepayWebhook = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('❌ Lỗi webhook:', error);
         try {
-            await connection.rollback();
+            if (connection) {
+                await connection.rollback();
+            }
         } catch (rollbackError) {
             console.error('Lỗi khi rollback:', rollbackError);
         }
         return res.sendStatus(200); 
     } finally {
-        connection.release();
+        if (connection) {
+            connection.release();
+        }
     }
 };
 

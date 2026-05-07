@@ -719,7 +719,6 @@ UNLOCK TABLES;
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_unicode_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `recommendation_effectiveness` AS select `us`.`segment_type` AS `segment_type`,count(`rh`.`id`) AS `total_recommendations`,sum((case when (`rh`.`clicked` = true) then 1 else 0 end)) AS `clicks`,sum((case when (`rh`.`enrolled` = true) then 1 else 0 end)) AS `enrollments`,round(((sum((case when (`rh`.`clicked` = true) then 1 else 0 end)) / count(`rh`.`id`)) * 100),2) AS `ctr_percentage`,round(((sum((case when (`rh`.`enrolled` = true) then 1 else 0 end)) / count(`rh`.`id`)) * 100),2) AS `conversion_rate`,avg(`rh`.`recommendation_score`) AS `avg_recommendation_score`,avg(`rh`.`rating`) AS `avg_user_rating`,count(distinct `rh`.`user_id`) AS `unique_users`,cast(`rh`.`recommended_at` as date) AS `date` from (`recommendation_history` `rh` left join `user_segments` `us` on((`rh`.`user_id` = `us`.`user_id`))) where (`rh`.`recommended_at` >= (now() - interval 30 day)) group by `us`.`segment_type`,cast(`rh`.`recommended_at` as date) order by `date` desc,`us`.`segment_type` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
