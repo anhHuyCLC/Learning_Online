@@ -309,9 +309,9 @@ export default function Home() {
     </div>
     <div className="footer-section">
       <h4>Kết Nối</h4>
-      <a href="#twitter">Twitter</a>
+      <a href="https://www.facebook.com/hiitrinh.196">Facebook</a>
       <a href="#linkedin">LinkedIn</a>
-      <a href="#github">GitHub</a>
+      <a href="https://github.com/anhHuyCLC">GitHub</a>
     </div>
   </div>
   <div className="footer-bottom">
